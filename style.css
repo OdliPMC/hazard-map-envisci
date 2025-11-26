@@ -41,9 +41,9 @@ header {
     padding: 8px 18px;
     background-color: #f5f1e8;
     background-image: url('header-bg.png');
-    background-size: cover;
+    background-size: contain;
     background-position: left center;
-    background-repeat: no-repeat;
+    background-repeat: repeat-x;
     box-shadow: 0 6px 24px rgba(0,0,0,0.12);
     border-bottom: 4px solid rgba(168,59,59,0.12);
     position: fixed;
