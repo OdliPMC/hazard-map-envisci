@@ -39,7 +39,7 @@ header {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 8px 18px;
+    padding: 0 18px;
     background-color: #f5f1e8;
     background-image: url('header-bg.png');
     background-size: auto 80px;
