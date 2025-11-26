@@ -52,12 +52,21 @@ header {
 /* Fancy display font for the site title */
 .site-title {
     margin: 0;
-    font-family: 'Playfair Display', serif;
-    font-weight: 700;
     font-size: 48px;
     letter-spacing: 2px;
     color: var(--on-maroon);
     text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.site-title .sec-part {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+}
+
+.site-title .upd-part {
+    font-family: 'Bebas Neue', sans-serif;
+    font-weight: 400;
+    letter-spacing: 1px;
 }
 
 /* small circular mark left of the title for branding */
