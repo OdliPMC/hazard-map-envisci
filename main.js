@@ -691,10 +691,7 @@ function addPinToList(id, name, marker) {
         var icon = document.createElement('img');
         icon.src = hazardIcon;
         icon.alt = '';
-        icon.style.width = '32px';
-        icon.style.height = '32px';
-        icon.style.marginRight = '8px';
-        icon.style.verticalAlign = 'middle';
+        icon.className = 'hazard-icon';
         item.appendChild(icon);
     }
 

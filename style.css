@@ -292,6 +292,15 @@ header {
     border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 
+/* Hazard icon in pin list */
+.pin-item .hazard-icon {
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
 .pin-item .pin-label {
     display: block;
     flex: 1 1 auto;
@@ -429,9 +438,9 @@ footer p { margin: 0; font-size: 13px; opacity: 0.95 }
         flex-wrap: wrap;
     }
     
-    .pin-item img {
-        width: 28px !important;
-        height: 28px !important;
+    .pin-item .hazard-icon {
+        width: 28px;
+        height: 28px;
     }
     
     .pin-delete { 
