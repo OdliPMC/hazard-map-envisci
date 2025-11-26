@@ -35,9 +35,10 @@ header, footer {
 /* Layout header to include the title and top tabs */
 header {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 4px;
+    justify-content: space-between;
+    gap: 12px;
     padding: 8px 18px;
     background-color: #f5f1e8;
     background-image: url('header-bg.png');
@@ -140,13 +141,13 @@ header {
 /* Tabs in the sidebar */
 .tabs {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
 }
 .tab-buttons {
     display: flex;
     gap: 6px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 .tab-button {
     background: transparent;
