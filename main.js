@@ -31,15 +31,41 @@ var hazardColors = {
     'slopes': '#16a085'        // Teal
 };
 
-// Create a custom colored marker icon
-function createColoredIcon(color) {
-    return L.divIcon({
-        className: 'custom-marker',
-        html: '<div style="background-color: ' + color + '; width: 25px; height: 25px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
-        iconSize: [25, 25],
-        iconAnchor: [12, 24],
-        popupAnchor: [0, -24]
-    });
+// Hazard type to icon mapping
+var hazardTypeIcons = {
+    'theft': 'hazards-icons/Theft.png',
+    'flooding': 'hazards-icons/Flooding.png',
+    'slippery': 'hazards-icons/Slippery.png',
+    'pets': 'hazards-icons/Stray-Pets.png',
+    'wild-animals': 'hazards-icons/Wild-Animals.png',
+    'construction': 'hazards-icons/Construction.png',
+    'no-lights': 'hazards-icons/No-lights.png',
+    'slopes': 'hazards-icons/Slope.png',
+    'other': null
+};
+
+// Create a custom marker icon based on hazard type
+function createHazardIcon(hazardType) {
+    var iconUrl = hazardTypeIcons[hazardType];
+    
+    if (iconUrl) {
+        // Use the actual hazard icon
+        return L.icon({
+            iconUrl: iconUrl,
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+    } else {
+        // Fallback to gray teardrop for 'other' or unknown types
+        return L.divIcon({
+            className: 'custom-marker',
+            html: '<div style="background-color: #808080; width: 25px; height: 25px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
+            iconSize: [25, 25],
+            iconAnchor: [12, 24],
+            popupAnchor: [0, -24]
+        });
+    }
 }
 
 // Show quick toast notifications
@@ -95,7 +121,7 @@ function loadPins() {
         // Avoid recreating if somehow already present
         if (pins[stored.id]) return;
         var hazardType = stored.hazardType || 'other';
-        var icon = createColoredIcon(hazardColors[hazardType] || hazardColors['other']);
+        var icon = createHazardIcon(hazardType);
         var marker = L.marker([stored.lat, stored.lng], { icon: icon }).addTo(map);
         var nm = stored.name || 'Unnamed pin';
         marker.bindPopup(renderPopupContent(nm, null, { lat: stored.lat, lng: stored.lng }));
@@ -111,7 +137,7 @@ function loadPins() {
                 if (newName === '') return;
                 
                 if (newHazardType !== pins[stored.id].hazardType) {
-                    var newIcon = createColoredIcon(hazardColors[newHazardType] || hazardColors['other']);
+                    var newIcon = createHazardIcon(newHazardType);
                     marker.setIcon(newIcon);
                     pins[stored.id].hazardType = newHazardType;
                 }
@@ -141,7 +167,7 @@ async function fetchPinsFromSupabase() {
             if (!row || !row.id || typeof row.lat !== 'number' || typeof row.lng !== 'number') return;
             if (pins[row.id]) return;
             var hazardType = row.hazard_type || 'other';
-            var icon = createColoredIcon(hazardColors[hazardType] || hazardColors['other']);
+            var icon = createHazardIcon(hazardType);
             var marker = L.marker([row.lat, row.lng], { icon: icon }).addTo(map);
             var nm = row.name || 'Unnamed pin';
             marker.bindPopup(renderPopupContent(nm, null, { lat: row.lat, lng: row.lng }));
@@ -156,7 +182,7 @@ async function fetchPinsFromSupabase() {
                     if (newName === '') return;
                     
                     if (newHazardType !== pins[row.id].hazardType) {
-                        var newIcon = createColoredIcon(hazardColors[newHazardType] || hazardColors['other']);
+                        var newIcon = createHazardIcon(newHazardType);
                         marker.setIcon(newIcon);
                         pins[row.id].hazardType = newHazardType;
                     }
@@ -188,7 +214,7 @@ function initRealtimePins() {
             var row = payload.new;
             if (!row || pins[row.id]) return;
             var hazardType = row.hazard_type || 'other';
-            var icon = createColoredIcon(hazardColors[hazardType] || hazardColors['other']);
+            var icon = createHazardIcon(hazardType);
             var marker = L.marker([row.lat, row.lng], { icon: icon }).addTo(map);
             var nm = row.name || 'Unnamed pin';
             marker.bindPopup(nm);
@@ -206,7 +232,7 @@ function initRealtimePins() {
                 local.name = row.name || 'Unnamed pin';
                 var newHazardType = row.hazard_type || 'other';
                 if (newHazardType !== local.hazardType) {
-                    var newIcon = createColoredIcon(hazardColors[newHazardType] || hazardColors['other']);
+                    var newIcon = createHazardIcon(newHazardType);
                     local.marker.setIcon(newIcon);
                     local.hazardType = newHazardType;
                 }
@@ -341,7 +367,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 var hazardType = result.hazardType || 'other';
                 if (name === '') return; // Don't save empty pins
                 
-                var icon = createColoredIcon(hazardColors[hazardType] || hazardColors['other']);
+                var icon = createHazardIcon(hazardType);
                 var marker = L.marker([e.latlng.lat, e.latlng.lng], { icon: icon }).addTo(map);
                 marker.bindPopup(renderPopupContent(name, null, e.latlng)).openPopup();
 
@@ -376,7 +402,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         
                         // Update marker icon if hazard type changed
                         if (newHazardType !== pins[id].hazardType) {
-                            var newIcon = createColoredIcon(hazardColors[newHazardType] || hazardColors['other']);
+                            var newIcon = createHazardIcon(newHazardType);
                             marker.setIcon(newIcon);
                             pins[id].hazardType = newHazardType;
                         }

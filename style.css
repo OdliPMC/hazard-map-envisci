@@ -255,6 +255,12 @@ header {
     border-radius: 6px;
 }
 
+/* Improve map tile rendering quality */
+#map img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+
 /* Pin list styles (fixed at bottom) */
 .pin-list {
     position: relative; /* normal flow inside .map-container */
