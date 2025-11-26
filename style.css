@@ -40,9 +40,10 @@ header {
     gap: 4px;
     padding: 8px 18px;
     background-color: #f5f1e8;
-    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyMCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDE5MjAgODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjVGMUU4Ii8+CjxjaXJjbGUgY3g9IjMwIiBjeT0iNDAiIHI9IjMwIiBmaWxsPSIjRkZCRjAwIi8+CjxjaXJjbGUgY3g9IjE5MCIgY3k9IjQwIiByPSI1MCIgZmlsbD0iIzdBMkUzQSIvPgo8Y2lyY2xlIGN4PSIzOTUiIGN5PSIwIiByPSI0MCIgZmlsbD0iIzAwNTY0QSIvPgo8L3N2Zz4=');
+    background-image: url('header-bg.png');
     background-size: cover;
     background-position: center;
+    background-repeat: no-repeat;
     box-shadow: 0 6px 24px rgba(0,0,0,0.12);
     border-bottom: 4px solid rgba(168,59,59,0.12);
     position: fixed;
