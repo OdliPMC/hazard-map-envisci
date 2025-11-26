@@ -15,8 +15,33 @@ var defaultCenter = [14.6556, 121.0733];
 // Map reference (will be initialized after DOM loads)
 var map = null;
 
-// Keep track of pins (id -> { id, name, marker })
+// Keep track of pins (id -> { id, name, marker, hazardType })
 var pins = {};
+
+// Hazard type colors for markers
+var hazardColors = {
+    'other': '#808080',        // Gray
+    'theft': '#e74c3c',        // Red
+    'flooding': '#3498db',     // Blue
+    'slippery': '#9b59b6',     // Purple
+    'pets': '#f39c12',         // Orange
+    'wild-animals': '#e67e22', // Dark Orange
+    'construction': '#f1c40f', // Yellow
+    'no-lights': '#34495e',    // Dark Gray
+    'slopes': '#16a085'        // Teal
+};
+
+// Create a custom colored marker icon
+function createColoredIcon(color) {
+    return L.divIcon({
+        className: 'custom-marker',
+        html: '<div style="background-color: ' + color + '; width: 25px; height: 25px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
+        iconSize: [25, 25],
+        iconAnchor: [12, 24],
+        popupAnchor: [0, -24]
+    });
+}
+
 // Show quick toast notifications
 function showToast(msg) {
     var t = document.getElementById('toast');
@@ -41,16 +66,16 @@ function renderPopupContent(name, landmarkText, latlng) {
 }
 
 // LocalStorage key for persistence
-var PINS_STORE_KEY = 'hazardmap-pins-v1';
+var PINS_STORE_KEY = 'hazardmap-pins-v2';
 
-// Persist current pins (id, name, lat, lng)
+// Persist current pins (id, name, lat, lng, hazardType)
 function savePins() {
     var arr = [];
     Object.keys(pins).forEach(function(id) {
         var p = pins[id];
         if (p && p.marker) {
             var ll = p.marker.getLatLng();
-            arr.push({ id: id, name: p.name, lat: ll.lat, lng: ll.lng });
+            arr.push({ id: id, name: p.name, lat: ll.lat, lng: ll.lng, hazardType: p.hazardType || 'other' });
         }
     });
     var payload = { version: 1, pins: arr };
@@ -69,22 +94,38 @@ function loadPins() {
         if (!stored || !stored.id || typeof stored.lat !== 'number' || typeof stored.lng !== 'number') return;
         // Avoid recreating if somehow already present
         if (pins[stored.id]) return;
-        var marker = L.marker([stored.lat, stored.lng]).addTo(map);
+        var hazardType = stored.hazardType || 'other';
+        var icon = createColoredIcon(hazardColors[hazardType] || hazardColors['other']);
+        var marker = L.marker([stored.lat, stored.lng], { icon: icon }).addTo(map);
         var nm = stored.name || 'Unnamed pin';
         marker.bindPopup(renderPopupContent(nm, null, { lat: stored.lat, lng: stored.lng }));
-        pins[stored.id] = { id: stored.id, name: nm, marker: marker };
+        pins[stored.id] = { id: stored.id, name: nm, marker: marker, hazardType: hazardType };
         addPinToList(stored.id, nm, marker);
         // Allow renaming again
         marker.on('dblclick', function() {
-            var current = marker.getPopup() ? marker.getPopup().getContent() : '';
-            var newName = prompt('Rename pin:', current);
-            if (newName === null) return;
-            newName = newName.trim();
-            if (newName === '') newName = 'Unnamed pin';
-            marker.bindPopup(renderPopupContent(newName, null, marker.getLatLng())).openPopup();
-            pins[stored.id].name = newName;
-            updatePinNameInList(stored.id, newName);
-            savePins();
+            var current = pins[stored.id] ? pins[stored.id].name : '';
+            openNameDialog(current, function(result) {
+                if (!result) return;
+                var newName = (result.name || '').trim();
+                var newHazardType = result.hazardType || pins[stored.id].hazardType || 'other';
+                if (newName === '') return;
+                
+                if (newHazardType !== pins[stored.id].hazardType) {
+                    var newIcon = createColoredIcon(hazardColors[newHazardType] || hazardColors['other']);
+                    marker.setIcon(newIcon);
+                    pins[stored.id].hazardType = newHazardType;
+                }
+                
+                marker.bindPopup(renderPopupContent(newName, null, marker.getLatLng())).openPopup();
+                pins[stored.id].name = newName;
+                updatePinNameInList(stored.id, newName);
+                savePins();
+                if (supabase) {
+                    var nowISO = new Date().toISOString();
+                    pins[stored.id].updated_at = nowISO;
+                    supabase.from('pins').update({ name: newName, hazard_type: newHazardType, updated_at: nowISO }).eq('id', stored.id).then(function(r){ if(r.error) console.warn('Supabase update failed:', r.error); });
+                }
+            });
         });
     });
 }
@@ -99,22 +140,37 @@ async function fetchPinsFromSupabase() {
         rows.forEach(function(row) {
             if (!row || !row.id || typeof row.lat !== 'number' || typeof row.lng !== 'number') return;
             if (pins[row.id]) return;
-            var marker = L.marker([row.lat, row.lng]).addTo(map);
+            var hazardType = row.hazard_type || 'other';
+            var icon = createColoredIcon(hazardColors[hazardType] || hazardColors['other']);
+            var marker = L.marker([row.lat, row.lng], { icon: icon }).addTo(map);
             var nm = row.name || 'Unnamed pin';
             marker.bindPopup(renderPopupContent(nm, null, { lat: row.lat, lng: row.lng }));
-            pins[row.id] = { id: row.id, name: nm, marker: marker, updated_at: row.updated_at || row.created_at };
+            pins[row.id] = { id: row.id, name: nm, marker: marker, hazardType: hazardType, updated_at: row.updated_at || row.created_at };
             addPinToList(row.id, nm, marker);
             marker.on('dblclick', function() {
-                var current = marker.getPopup() ? marker.getPopup().getContent() : '';
-                var newName = prompt('Rename pin:', current);
-                if (newName === null) return;
-                newName = newName.trim();
-                if (newName === '') newName = 'Unnamed pin';
-                marker.bindPopup(renderPopupContent(newName, null, marker.getLatLng())).openPopup();
-                pins[row.id].name = newName;
-                updatePinNameInList(row.id, newName);
-                savePins();
-                supabase.from('pins').update({ name: newName, updated_at: new Date().toISOString() }).eq('id', row.id).then(function(r){ if(r.error) console.warn('Supabase rename failed:', r.error); });
+                var current = pins[row.id] ? pins[row.id].name : '';
+                openNameDialog(current, function(result) {
+                    if (!result) return;
+                    var newName = (result.name || '').trim();
+                    var newHazardType = result.hazardType || pins[row.id].hazardType || 'other';
+                    if (newName === '') return;
+                    
+                    if (newHazardType !== pins[row.id].hazardType) {
+                        var newIcon = createColoredIcon(hazardColors[newHazardType] || hazardColors['other']);
+                        marker.setIcon(newIcon);
+                        pins[row.id].hazardType = newHazardType;
+                    }
+                    
+                    marker.bindPopup(renderPopupContent(newName, null, marker.getLatLng())).openPopup();
+                    pins[row.id].name = newName;
+                    updatePinNameInList(row.id, newName);
+                    savePins();
+                    if (supabase) {
+                        var nowISO = new Date().toISOString();
+                        pins[row.id].updated_at = nowISO;
+                        supabase.from('pins').update({ name: newName, hazard_type: newHazardType, updated_at: nowISO }).eq('id', row.id).then(function(r){ if(r.error) console.warn('Supabase rename failed:', r.error); });
+                    }
+                });
             });
         });
         savePins();
@@ -131,10 +187,12 @@ function initRealtimePins() {
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pins' }, function(payload) {
             var row = payload.new;
             if (!row || pins[row.id]) return;
-            var marker = L.marker([row.lat, row.lng]).addTo(map);
+            var hazardType = row.hazard_type || 'other';
+            var icon = createColoredIcon(hazardColors[hazardType] || hazardColors['other']);
+            var marker = L.marker([row.lat, row.lng], { icon: icon }).addTo(map);
             var nm = row.name || 'Unnamed pin';
             marker.bindPopup(nm);
-            pins[row.id] = { id: row.id, name: nm, marker: marker, updated_at: row.updated_at || row.created_at };
+            pins[row.id] = { id: row.id, name: nm, marker: marker, hazardType: hazardType, updated_at: row.updated_at || row.created_at };
             addPinToList(row.id, nm, marker);
             showToast('New pin added');
         })
@@ -146,6 +204,12 @@ function initRealtimePins() {
             // Conflict handling: apply only if newer than local
             if (!local.updated_at || (incomingTime && new Date(incomingTime) > new Date(local.updated_at))) {
                 local.name = row.name || 'Unnamed pin';
+                var newHazardType = row.hazard_type || 'other';
+                if (newHazardType !== local.hazardType) {
+                    var newIcon = createColoredIcon(hazardColors[newHazardType] || hazardColors['other']);
+                    local.marker.setIcon(newIcon);
+                    local.hazardType = newHazardType;
+                }
                 local.updated_at = incomingTime;
                 updatePinNameInList(row.id, local.name);
                 showToast('Pin updated');
@@ -275,10 +339,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             e.latlng.lng >= bounds[0][1] && e.latlng.lng <= bounds[1][1]
         ) {
             // Open name dialog; continue after user confirms
-            openNameDialog('', async function(name) {
-                name = (name || '').trim();
-                if (name === '') name = 'Unnamed pin';
-                var marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+            openNameDialog('', async function(result) {
+                if (!result) return;
+                var name = (result.name || '').trim();
+                var hazardType = result.hazardType || 'other';
+                if (name === '') return; // Don't save empty pins
+                
+                var icon = createColoredIcon(hazardColors[hazardType] || hazardColors['other']);
+                var marker = L.marker([e.latlng.lat, e.latlng.lng], { icon: icon }).addTo(map);
                 marker.bindPopup(renderPopupContent(name, null, e.latlng)).openPopup();
 
             // Attempt remote insert; fallback local id if unavailable
@@ -286,7 +354,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 var id = null;
                 if (supabase) {
                     try {
-                        var ins = await supabase.from('pins').insert({ name: name, lat: e.latlng.lat, lng: e.latlng.lng }).select();
+                        var ins = await supabase.from('pins').insert({ name: name, lat: e.latlng.lat, lng: e.latlng.lng, hazard_type: hazardType }).select();
                         if (!ins.error && ins.data && ins.data.length > 0) {
                             id = ins.data[0].id;
                             pins[id].updated_at = ins.data[0].updated_at || ins.data[0].created_at;
@@ -298,15 +366,24 @@ document.addEventListener('DOMContentLoaded', async function() {
                     }
                 }
                 if (!id) id = 'pin-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-                pins[id] = { id: id, name: name, marker: marker };
+                pins[id] = { id: id, name: name, marker: marker, hazardType: hazardType };
                 addPinToList(id, name, marker);
                 savePins();
                 marker.on('dblclick', function() {
                     var current = pins[id] ? pins[id].name : '';
-                    openNameDialog(current, function(newName) {
-                        if (newName === null) return;
-                        newName = (newName || '').trim();
-                        if (newName === '') newName = 'Unnamed pin';
+                    openNameDialog(current, function(result) {
+                        if (!result) return;
+                        var newName = (result.name || '').trim();
+                        var newHazardType = result.hazardType || pins[id].hazardType || 'other';
+                        if (newName === '') return; // Don't save empty names
+                        
+                        // Update marker icon if hazard type changed
+                        if (newHazardType !== pins[id].hazardType) {
+                            var newIcon = createColoredIcon(hazardColors[newHazardType] || hazardColors['other']);
+                            marker.setIcon(newIcon);
+                            pins[id].hazardType = newHazardType;
+                        }
+                        
                         marker.bindPopup(renderPopupContent(newName, null, marker.getLatLng())).openPopup();
                         pins[id].name = newName;
                         updatePinNameInList(id, newName);
@@ -314,7 +391,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         if (supabase) {
                             var nowISO = new Date().toISOString();
                             pins[id].updated_at = nowISO;
-                            supabase.from('pins').update({ name: newName, updated_at: nowISO }).eq('id', id).then(function(r){ if(r.error) console.warn('Supabase rename failed:', r.error); });
+                            supabase.from('pins').update({ name: newName, hazard_type: newHazardType, updated_at: nowISO }).eq('id', id).then(function(r){ if(r.error) console.warn('Supabase rename failed:', r.error); });
                         }
                     });
                 });
@@ -644,14 +721,16 @@ var _nameDialogResolver = null;
 function openNameDialog(initialValue, onDone) {
     var dlg = document.getElementById('name-dialog');
     var input = document.getElementById('name-dialog-input');
+    var select = document.getElementById('hazard-type-select');
     var btnSave = document.getElementById('name-dialog-save');
     var btnCancel = document.getElementById('name-dialog-cancel');
-    if (!dlg || !input || !btnSave || !btnCancel) { onDone && onDone(initialValue || ''); return; }
+    if (!dlg || !input || !select || !btnSave || !btnCancel) { onDone && onDone({ name: initialValue || '', hazardType: 'other' }); return; }
     dlg.hidden = false; dlg.setAttribute('aria-hidden', 'false');
     input.value = initialValue || '';
+    select.value = 'other'; // Reset to default
     setTimeout(function(){ input.focus(); input.select(); }, 50);
     _nameDialogResolver = onDone;
-    btnSave.onclick = function(){ closeNameDialog(input.value); };
+    btnSave.onclick = function(){ closeNameDialog({ name: input.value, hazardType: select.value }); };
     btnCancel.onclick = function(){ closeNameDialog(null); };
 }
 

@@ -209,6 +209,49 @@ header {
 .tab-panel p, .tab-panel ul { color: #3b0b0b; font-size: 14px; margin: 0; }
 .tab-panel ul { padding-left: 18px; margin-top: 6px }
 
+/* Hazard types content styling */
+.hazard-types-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.hazard-type-item {
+    background: rgba(128, 0, 0, 0.08);
+    border-left: 3px solid var(--maroon);
+    padding: 10px 12px;
+    border-radius: 4px;
+}
+
+.hazard-type-item h4 {
+    margin: 0 0 6px 0;
+    font-size: 16px;
+    font-family: 'Bebas Neue', sans-serif;
+    color: var(--maroon);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.hazard-type-item p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #3b0b0b;
+}
+
+.light-mode .hazard-type-item {
+    background: rgba(128, 0, 0, 0.05);
+}
+
+.light-mode .hazard-type-item h4 {
+    color: var(--maroon-dark);
+}
+
+.light-mode .hazard-type-item p {
+    color: #222;
+}
+
 .map-container {
     flex: 1;
     padding: 10px;
@@ -397,3 +440,9 @@ footer p { margin: 0; font-size: 13px; opacity: 0.95 }
 .btn-secondary { background: transparent; color: #000; border: 1px solid #000; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
 .btn-primary:hover { opacity: 0.9; }
 .btn-secondary:hover { background: #000; color: #fff; }
+
+/* Custom marker styling */
+.custom-marker {
+    background: transparent;
+    border: none;
+}
