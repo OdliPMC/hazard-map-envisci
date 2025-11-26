@@ -494,10 +494,29 @@ function addPinToList(id, name, marker) {
     // make the item focusable for keyboard users so hover-style reveal also works with focus
     item.setAttribute('tabindex', '0');
 
+    // delete button (placed on the left)
+    var del = document.createElement('button');
+    del.className = 'pin-delete';
+    del.setAttribute('aria-label', 'Delete pin ' + name);
+    del.textContent = '✕';
+    del.style.marginRight = '8px';
+    del.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var doDelete = confirm('Delete pin "' + name + '"?');
+        if (!doDelete) return;
+        try { marker.remove(); } catch (e) { if (map.hasLayer(marker)) map.removeLayer(marker); }
+        delete pins[id];
+        if (item.parentNode) item.parentNode.removeChild(item);
+        savePins();
+        if (supabase) {
+            supabase.from('pins').delete().eq('id', id).then(function(r){ if(r.error) console.warn('Supabase delete failed:', r.error); });
+        }
+    });
+    item.appendChild(del);
+
     var label = document.createElement('span');
     label.className = 'pin-label';
     label.textContent = name;
-    // label color is handled via CSS
     item.appendChild(label);
 
     // find nearest landmark to this marker using Overpass (async)
@@ -533,35 +552,10 @@ function addPinToList(id, name, marker) {
             landmarkSpan.textContent = 'No landmark';
         });
     })(marker, landmarkSpan);
-    // container for right-side controls (landmark + delete)
-    var controls = document.createElement('div');
-    controls.style.display = 'inline-flex';
-    controls.style.alignItems = 'center';
+    // landmark info goes on the right
+    var controls = document.createElement('span');
+    controls.style.float = 'right';
     controls.appendChild(landmarkSpan);
-
-    // delete button
-    var del = document.createElement('button');
-    del.className = 'pin-delete';
-    del.setAttribute('aria-label', 'Delete pin ' + name);
-    del.textContent = '✕';
-    // stop click from bubbling to the item click
-    del.addEventListener('click', function(ev) {
-        ev.stopPropagation();
-        var doDelete = confirm('Delete pin "' + name + '"?');
-        if (!doDelete) return;
-        // remove marker from map and from pins object
-        try { marker.remove(); } catch (e) { if (map.hasLayer(marker)) map.removeLayer(marker); }
-        delete pins[id];
-        // remove the list item
-        if (item.parentNode) item.parentNode.removeChild(item);
-        savePins();
-        // Sync delete to Supabase
-        if (supabase) {
-            supabase.from('pins').delete().eq('id', id).then(function(r){ if(r.error) console.warn('Supabase delete failed:', r.error); });
-        }
-    });
-    controls.appendChild(del);
-
     item.appendChild(controls);
 
     // click list item to pan to marker and open popup
