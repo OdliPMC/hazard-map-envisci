@@ -289,9 +289,9 @@ header {
     color: #000;
     font-weight: 700;
     cursor: pointer;
-    padding: 4px 6px;
-    border-radius: 6px;
-    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 14px;
 }
 
 .pin-delete:hover {
@@ -313,6 +313,35 @@ footer {
 }
 
 footer p { margin: 0; font-size: 13px; opacity: 0.95 }
+.tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.tab-buttons { gap: 8px; }
+.tab-button { padding: 8px 10px; }
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+    .container {
+        flex-direction: column;
+        height: auto;
+        margin: 0;
+        max-width: 100%;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    .sidebar {
+        width: 100%;
+        order: 2;
+    }
+    .map-container {
+        order: 1;
+        padding: 8px;
+    }
+    #map { height: 60vh; }
+    .pin-list { max-height: 40vh; }
+    .pin-item { padding: 10px 6px; gap: 10px; }
+    .pin-delete { padding: 8px 12px; border-radius: 10px; }
+    .theme-toggle { top: 8px; right: 8px; }
+    .site-title { font-size: 40px; }
+}
 
 /* Popup card styling */
 .leaflet-popup-content .popup-card {
