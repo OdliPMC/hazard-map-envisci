@@ -313,6 +313,8 @@ footer {
 }
 
 footer p { margin: 0; font-size: 13px; opacity: 0.95 }
+.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: #fff; padding: 8px 12px; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); z-index: 11000; font-size: 13px; }
+.toast[hidden] { display: none; }
 .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .tab-buttons { gap: 8px; }
 .tab-button { padding: 8px 10px; }

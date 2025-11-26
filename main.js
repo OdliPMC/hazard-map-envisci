@@ -17,6 +17,14 @@ var map = null;
 
 // Keep track of pins (id -> { id, name, marker })
 var pins = {};
+// Show quick toast notifications
+function showToast(msg) {
+    var t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.hidden = false;
+    setTimeout(function(){ t.hidden = true; }, 2000);
+}
 // Build rich HTML for marker popup
 function renderPopupContent(name, landmarkText, latlng) {
     var coords = latlng ? (Math.round(latlng.lat * 10000) / 10000 + ", " + Math.round(latlng.lng * 10000) / 10000) : '';
@@ -94,7 +102,7 @@ async function fetchPinsFromSupabase() {
             var marker = L.marker([row.lat, row.lng]).addTo(map);
             var nm = row.name || 'Unnamed pin';
             marker.bindPopup(renderPopupContent(nm, null, { lat: row.lat, lng: row.lng }));
-            pins[row.id] = { id: row.id, name: nm, marker: marker };
+            pins[row.id] = { id: row.id, name: nm, marker: marker, updated_at: row.updated_at || row.created_at };
             addPinToList(row.id, nm, marker);
             marker.on('dblclick', function() {
                 var current = marker.getPopup() ? marker.getPopup().getContent() : '';
@@ -126,14 +134,22 @@ function initRealtimePins() {
             var marker = L.marker([row.lat, row.lng]).addTo(map);
             var nm = row.name || 'Unnamed pin';
             marker.bindPopup(nm);
-            pins[row.id] = { id: row.id, name: nm, marker: marker };
+            pins[row.id] = { id: row.id, name: nm, marker: marker, updated_at: row.updated_at || row.created_at };
             addPinToList(row.id, nm, marker);
+            showToast('New pin added');
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pins' }, function(payload) {
             var row = payload.new;
             if (!row || !pins[row.id]) return;
-            pins[row.id].name = row.name || 'Unnamed pin';
-            updatePinNameInList(row.id, pins[row.id].name);
+            var local = pins[row.id];
+            var incomingTime = row.updated_at || row.created_at;
+            // Conflict handling: apply only if newer than local
+            if (!local.updated_at || (incomingTime && new Date(incomingTime) > new Date(local.updated_at))) {
+                local.name = row.name || 'Unnamed pin';
+                local.updated_at = incomingTime;
+                updatePinNameInList(row.id, local.name);
+                showToast('Pin updated');
+            }
         })
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'pins' }, function(payload) {
             var id = payload.old.id;
@@ -147,6 +163,7 @@ function initRealtimePins() {
         })
         .subscribe(function(status) {
             if (status === 'SUBSCRIBED') console.log('Realtime pins subscribed');
+            if (status === 'SUBSCRIBED') showToast('Realtime connected');
         });
 }
 
@@ -272,6 +289,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         var ins = await supabase.from('pins').insert({ name: name, lat: e.latlng.lat, lng: e.latlng.lng }).select();
                         if (!ins.error && ins.data && ins.data.length > 0) {
                             id = ins.data[0].id;
+                            pins[id].updated_at = ins.data[0].updated_at || ins.data[0].created_at;
                         } else if (ins.error) {
                             console.warn('Supabase insert failed, using local id:', ins.error);
                         }
@@ -294,7 +312,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                         updatePinNameInList(id, newName);
                         savePins();
                         if (supabase) {
-                            supabase.from('pins').update({ name: newName, updated_at: new Date().toISOString() }).eq('id', id).then(function(r){ if(r.error) console.warn('Supabase rename failed:', r.error); });
+                            var nowISO = new Date().toISOString();
+                            pins[id].updated_at = nowISO;
+                            supabase.from('pins').update({ name: newName, updated_at: nowISO }).eq('id', id).then(function(r){ if(r.error) console.warn('Supabase rename failed:', r.error); });
                         }
                     });
                 });
