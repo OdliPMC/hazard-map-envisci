@@ -77,7 +77,10 @@ header {
     padding: 15px;
     box-shadow: 2px 0 8px rgba(128,0,0,0.08);
     overflow-y: auto;
+    overflow-x: hidden;
     color: #3b0b0b;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 /* Make tab-panels fill the sidebar vertically so a panel can take over the whole left box */
@@ -85,10 +88,25 @@ header {
     display: flex;
     flex-direction: column;
     height: 100%;
+    overflow: hidden;
 }
 .tab-panel {
     flex: 1 1 auto;
     overflow: auto;
+    overflow-x: hidden;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.tab-panel h3 {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.tab-panel p, .tab-panel ul, .tab-panel li {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
 
 .hazard-list {
@@ -218,6 +236,9 @@ header {
     font-size: 13px;
     line-height: 1.5;
     color: #3b0b0b;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    clear: both;
 }
 
 .light-mode .hazard-type-item {
@@ -415,6 +436,39 @@ footer p { margin: 0; font-size: 13px; opacity: 0.95 }
         order: 2;
         max-height: 50vh;
         padding: 12px;
+        box-sizing: border-box;
+    }
+    
+    .tab-panel {
+        padding: 8px;
+        box-sizing: border-box;
+    }
+    
+    .tab-panel h3 {
+        font-size: 18px;
+        margin-top: 0;
+    }
+    
+    .tab-panel p, .tab-panel ul {
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    
+    .tab-panel li {
+        margin-bottom: 8px;
+    }
+    
+    .hazard-type-item {
+        margin-bottom: 12px;
+        padding: 10px;
+    }
+    
+    .hazard-type-item h4 {
+        font-size: 16px;
+    }
+    
+    .hazard-type-item p {
+        font-size: 13px;
     }
     
     .map-container {
@@ -486,6 +540,11 @@ footer p { margin: 0; font-size: 13px; opacity: 0.95 }
     
     .sidebar {
         width: 280px;
+        box-sizing: border-box;
+    }
+    
+    .tab-panel {
+        padding: 10px;
     }
     
     header {
