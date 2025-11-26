@@ -256,8 +256,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             e.latlng.lat >= bounds[0][0] && e.latlng.lat <= bounds[1][0] &&
             e.latlng.lng >= bounds[0][1] && e.latlng.lng <= bounds[1][1]
         ) {
-            // Ask the user for a name for this pin
-            var name = prompt('Enter a name for this pin:', '');
+            // Ask the user for a friendly name for this pin
+            var name = prompt('Name this pin (e.g., "Broken sidewalk near Palma Hall"):', '');
             if (name === null) {
                 // User cancelled — don't create the marker
                 return;
@@ -289,8 +289,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 addPinToList(id, name, marker);
                 savePins();
                 marker.on('dblclick', function() {
-                    var current = marker.getPopup() ? marker.getPopup().getContent() : '';
-                    var newName = prompt('Rename pin:', current);
+                    var current = pins[id] ? pins[id].name : (marker.getPopup() ? marker.getPopup().getContent() : '');
+                    var newName = prompt('Rename this pin (keep it short and clear):', current);
                     if (newName === null) return;
                     newName = newName.trim();
                     if (newName === '') newName = 'Unnamed pin';
