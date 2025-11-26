@@ -624,55 +624,25 @@ function addPinToList(id, name, marker) {
     });
     item.appendChild(del);
 
+    // Get hazard type label
+    var hazardType = pins[id] ? pins[id].hazardType : 'other';
+    var hazardTypeLabels = {
+        'theft': 'Theft',
+        'flooding': 'Flooding',
+        'slippery': 'Slippery when wet',
+        'pets': 'Community pets',
+        'wild-animals': 'Wild animals',
+        'construction': 'Construction on-going',
+        'no-lights': 'No lights at night',
+        'slopes': 'Slopes',
+        'other': 'Other / General'
+    };
+    var hazardLabel = hazardTypeLabels[hazardType] || 'Other / General';
+
     var label = document.createElement('span');
     label.className = 'pin-label';
-    label.textContent = name;
+    label.textContent = hazardLabel;
     item.appendChild(label);
-
-    // find nearest landmark to this marker using Overpass (async)
-    var landmarkSpan = document.createElement('span');
-    landmarkSpan.className = 'pin-landmark';
-    landmarkSpan.textContent = 'Searching...';
-    // color handled via CSS
-    // do the async lookup and update the UI when ready
-    (function(marker, landmarkSpan) {
-        var latlng = marker.getLatLng();
-        getBuildingAndPOI(latlng, 400).then(function(res) {
-            if (!res) {
-                landmarkSpan.textContent = 'No landmark';
-                return;
-            }
-            var parts = [];
-            if (res.building && res.building.name) {
-                parts.push((res.building.type || 'Building') + ': ' + res.building.name + ' (' + Math.round(res.building.dist) + ' m)');
-            }
-            if (res.poi && res.poi.name) {
-                // avoid duplicating same label
-                var poiLabel = res.poi.name;
-                if (!res.building || (res.building.name !== poiLabel)) {
-                    parts.push('Nearest: ' + (res.poi.type || 'Place') + ': ' + poiLabel + ' (' + Math.round(res.poi.dist) + ' m)');
-                }
-            }
-            if (parts.length === 0) {
-                landmarkSpan.textContent = 'No nearby named landmark';
-            } else {
-                landmarkSpan.textContent = parts.join(' • ');
-            }
-                try {
-                    var pinEntry = pins[id] || pins[row && row.id] || null; // best-effort lookup
-                    var mk = pinEntry ? pinEntry.marker : marker;
-                    var nmNow = pinEntry ? pinEntry.name : name;
-                    if (mk) mk.bindPopup(renderPopupContent(nmNow, landmarkSpan.textContent, mk.getLatLng()));
-                } catch (e) {}
-        }).catch(function() {
-            landmarkSpan.textContent = 'No landmark';
-        });
-    })(marker, landmarkSpan);
-    // landmark info goes on the right
-    var controls = document.createElement('span');
-    controls.style.float = 'right';
-    controls.appendChild(landmarkSpan);
-    item.appendChild(controls);
 
     // click list item to pan to marker and open popup
     item.addEventListener('click', function() {
