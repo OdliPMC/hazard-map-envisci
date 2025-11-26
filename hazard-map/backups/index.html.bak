@@ -5,7 +5,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script src="supabase.js"></script>
 </head>
 <body>
     <header>
@@ -21,7 +20,6 @@
                 <button class="tab-button active" role="tab" aria-selected="true" aria-controls="tab-who" id="tab-btn-who">Who we are</button>
                 <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-updates" id="tab-btn-updates">Site Updates</button>
                 <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-disclaimer" id="tab-btn-disclaimer">Disclaimer</button>
-                <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-instructions" id="tab-btn-instructions">Instructions</button>
             </div>
         </nav>
     </header>
@@ -40,7 +38,7 @@
 
                 <div id="tab-who" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-who">
                     <h3>Who we are</h3>
-                    <p>This website was created by the group BLOOMS as a final project requirement for Env Sci WFW, 1st Sem, AY ‘25-’26. The goal of this project is to make a community-sustained hazard map for UP Diliman to encourage students and community-goers alike to safely travel through the campus on foot, therefore reducing their collective carbon footprint. We, members of BLOOMS, hope that you, the user, would find this website helpful and use it for its intended purpose. Thank you and stay safe!</p>
+                    <p>We are a small environmental science team building simple tools to visualize hazards and community data. This map demonstrates pinning points and searching nearby landmarks.</p>
                 </div>
 
                 <div id="tab-updates" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-updates" hidden>
@@ -55,20 +53,6 @@
                     <h3>Disclaimer</h3>
                     <p>The data shown is for demonstration only. Overpass and Nominatim lookups are subject to external service availability and may be rate-limited.</p>
                 </div>
-                <div id="tab-instructions" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-instructions" hidden>
-                    <h3>Instructions</h3>
-                    <ul>
-                        <li><strong>Add a pin:</strong> Click anywhere inside the campus bounds on the map and enter a name. The pin appears in the Hazards list.</li>
-                        <li><strong>Rename a pin:</strong> Double‑click the marker on the map and enter the new name.</li>
-                        <li><strong>Locate a pin:</strong> Click its entry in the Hazards list to center the map and open its popup.</li>
-                        <li><strong>Delete a pin:</strong> Press the ✕ button in its list row and confirm.</li>
-                        <li><strong>Nearest landmark:</strong> After adding a pin the app queries OpenStreetMap; results show under the pin name once resolved.</li>
-                        <li><strong>Theme toggle:</strong> Use the moon/sun button (top right) to switch dark/light modes; your choice is saved.</li>
-                        <li><strong>Persistence:</strong> Pins are saved locally; reloading the page restores them automatically.</li>
-                        <li><strong>Bounds:</strong> Pins can only be placed within the defined UP Diliman boundary; clicks outside are rejected.</li>
-                        <li><strong>Accessibility:</strong> You can focus list items with Tab and press Enter/Space to activate tabs.</li>
-                    </ul>
-                </div>
             </div>
         </aside>
 
@@ -82,6 +66,6 @@
     </footer>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script defer src="main.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>

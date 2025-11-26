@@ -1,17 +1,3 @@
-// Supabase configuration (uses global supabase from CDN)
-var SUPABASE_URL = 'https://oggnnptinplbdmkhkaqh.supabase.co';
-var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nZ25ucHRpbnBsYmRta2hrYXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMTg0MDYsImV4cCI6MjA3OTY5NDQwNn0.0X6PJMoEP6YvU_4g3qn6glHU1Qiuq507gFq79TnyQPQ';
-var supabase = null;
-try {
-    if (window.supabase && window.supabase.createClient) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
-    } else {
-        console.warn('Supabase library not loaded; using local-only pins');
-    }
-} catch (e) {
-    console.warn('Supabase init failed; using local-only pins:', e);
-}
-
 // Define the bounds of UP Diliman (approximate)
 var bounds = [
     [14.645541284855522, 121.05357969734676], // southwest corner
@@ -21,132 +7,43 @@ var bounds = [
 // Default center for the map (UP Diliman)
 var defaultCenter = [14.6556, 121.0733];
 
-// Map reference (will be initialized after DOM loads)
-var map = null;
+// Create map centered on UP Diliman with restricted zoom and bounds
+var map = L.map('map', {
+    center: defaultCenter, // center coordinates
+    zoom: 16,               // starting zoom
+    minZoom: 15,            // can't zoom out too far
+    maxZoom: 19,            // can't zoom in too close (match tile availability)
+    maxBounds: bounds,      // restrict map panning
+    maxBoundsViscosity: 0.8 // controls how "sticky" the edges are             
+});
+
+// Add OpenStreetMap tiles
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19,
+    maxNativeZoom: 19
+}).addTo(map);
+
+// Ensure the map is correctly sized and centered when ready (fixes any layout/centering issues)
+map.whenReady(function() {
+    // Tell Leaflet to recalculate sizes (useful if the map was initialized hidden or container size changed)
+    setTimeout(function() {
+        try { map.invalidateSize(); } catch (e) {}
+        try { map.setView(defaultCenter, map.getZoom()); } catch (e) {}
+    }, 50);
+});
+
+// Keep the map centered on window resize so it appears centered visually
+window.addEventListener('resize', function() {
+    try { map.invalidateSize(); } catch (e) {}
+    try { map.setView(defaultCenter, map.getZoom()); } catch (e) {}
+});
 
 // Keep track of pins (id -> { id, name, marker })
 var pins = {};
 
-// LocalStorage key for persistence
-var PINS_STORE_KEY = 'hazardmap-pins-v1';
-
-// Persist current pins (id, name, lat, lng)
-function savePins() {
-    var arr = [];
-    Object.keys(pins).forEach(function(id) {
-        var p = pins[id];
-        if (p && p.marker) {
-            var ll = p.marker.getLatLng();
-            arr.push({ id: id, name: p.name, lat: ll.lat, lng: ll.lng });
-        }
-    });
-    var payload = { version: 1, pins: arr };
-    try { localStorage.setItem(PINS_STORE_KEY, JSON.stringify(payload)); } catch (e) {}
-}
-
-// Restore pins from storage (re-run landmark lookup for fresh data)
-function loadPins() {
-    var raw = null;
-    try { raw = localStorage.getItem(PINS_STORE_KEY); } catch (e) { raw = null; }
-    if (!raw) return;
-    var data = null;
-    try { data = JSON.parse(raw); } catch (e) { data = null; }
-    if (!data || !data.pins || !Array.isArray(data.pins)) return;
-    data.pins.forEach(function(stored) {
-        if (!stored || !stored.id || typeof stored.lat !== 'number' || typeof stored.lng !== 'number') return;
-        // Avoid recreating if somehow already present
-        if (pins[stored.id]) return;
-        var marker = L.marker([stored.lat, stored.lng]).addTo(map);
-        var nm = stored.name || 'Unnamed pin';
-        marker.bindPopup(nm);
-        pins[stored.id] = { id: stored.id, name: nm, marker: marker };
-        addPinToList(stored.id, nm, marker);
-        // Allow renaming again
-        marker.on('dblclick', function() {
-            var current = marker.getPopup() ? marker.getPopup().getContent() : '';
-            var newName = prompt('Rename pin:', current);
-            if (newName === null) return;
-            newName = newName.trim();
-            if (newName === '') newName = 'Unnamed pin';
-            marker.bindPopup(newName).openPopup();
-            pins[stored.id].name = newName;
-            updatePinNameInList(stored.id, newName);
-            savePins();
-        });
-    });
-}
-
-// Fetch shared pins from Supabase then cache locally; fallback to local if unavailable
-async function fetchPinsFromSupabase() {
-    if (!supabase) { loadPins(); return; }
-    try {
-        var result = await supabase.from('pins').select('*').order('created_at');
-        if (result.error) { console.warn('Supabase fetch error; fallback to local:', result.error); loadPins(); return; }
-        var rows = result.data || [];
-        rows.forEach(function(row) {
-            if (!row || !row.id || typeof row.lat !== 'number' || typeof row.lng !== 'number') return;
-            if (pins[row.id]) return;
-            var marker = L.marker([row.lat, row.lng]).addTo(map);
-            var nm = row.name || 'Unnamed pin';
-            marker.bindPopup(nm);
-            pins[row.id] = { id: row.id, name: nm, marker: marker };
-            addPinToList(row.id, nm, marker);
-            marker.on('dblclick', function() {
-                var current = marker.getPopup() ? marker.getPopup().getContent() : '';
-                var newName = prompt('Rename pin:', current);
-                if (newName === null) return;
-                newName = newName.trim();
-                if (newName === '') newName = 'Unnamed pin';
-                marker.bindPopup(newName).openPopup();
-                pins[row.id].name = newName;
-                updatePinNameInList(row.id, newName);
-                savePins();
-                supabase.from('pins').update({ name: newName, updated_at: new Date().toISOString() }).eq('id', row.id).then(function(r){ if(r.error) console.warn('Supabase rename failed:', r.error); });
-            });
-        });
-        savePins();
-    } catch (e) {
-        console.warn('Supabase fetch exception:', e);
-        loadPins();
-    }
-}
-
-// Realtime subscription to reflect other users' changes
-function initRealtimePins() {
-    if (!supabase) return;
-    supabase.channel('public:pins')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pins' }, function(payload) {
-            var row = payload.new;
-            if (!row || pins[row.id]) return;
-            var marker = L.marker([row.lat, row.lng]).addTo(map);
-            var nm = row.name || 'Unnamed pin';
-            marker.bindPopup(nm);
-            pins[row.id] = { id: row.id, name: nm, marker: marker };
-            addPinToList(row.id, nm, marker);
-        })
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pins' }, function(payload) {
-            var row = payload.new;
-            if (!row || !pins[row.id]) return;
-            pins[row.id].name = row.name || 'Unnamed pin';
-            updatePinNameInList(row.id, pins[row.id].name);
-        })
-        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'pins' }, function(payload) {
-            var id = payload.old.id;
-            var p = pins[id];
-            if (!p) return;
-            try { p.marker.remove(); } catch (e) {}
-            delete pins[id];
-            var item = pinListContainer ? pinListContainer.querySelector('[data-pin-id="' + id + '"]') : null;
-            if (item && item.parentNode) item.parentNode.removeChild(item);
-            savePins();
-        })
-        .subscribe(function(status) {
-            if (status === 'SUBSCRIBED') console.log('Realtime pins subscribed');
-        });
-}
-
-// Reference to the hazard list container (left sidebar). Will be set after DOM loads.
-var pinListContainer = null;
+// Reference to the hazard list container (left sidebar). We'll add pins here.
+var pinListContainer = document.getElementById('hazard-list');
 
 // Sidebar tab behavior: switch visible tab panel and update aria attributes
 function initSidebarTabs() {
@@ -183,107 +80,9 @@ function initSidebarTabs() {
 }
 
 // initialize sidebar tabs and theme toggle on load
-document.addEventListener('DOMContentLoaded', function() {
-    // Wait for Leaflet to be available
-    if (typeof L === 'undefined') {
-        console.error('Leaflet not loaded');
-        return;
-    }
-    
-    // Set DOM reference after elements are ready
-    pinListContainer = document.getElementById('hazard-list');
-    
-    // Initialize map
-    map = L.map('map', {
-        center: defaultCenter,
-        zoom: 16,
-        minZoom: 15,
-        maxZoom: 19,
-        maxBounds: bounds,
-        maxBoundsViscosity: 0.8
-    });
-    
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19,
-        maxNativeZoom: 19
-    }).addTo(map);
-    
-    map.whenReady(function() {
-        setTimeout(function() {
-            try { map.invalidateSize(); } catch (e) {}
-            try { map.setView(defaultCenter, map.getZoom()); } catch (e) {}
-        }, 50);
-    });
-    
-    window.addEventListener('resize', function() {
-        try { map.invalidateSize(); } catch (e) {}
-        try { map.setView(defaultCenter, map.getZoom()); } catch (e) {}
-    });
-    
+document.addEventListener('DOMContentLoaded', function() { 
     initSidebarTabs(); 
     initThemeToggle();
-    // Fetch shared pins first; fallback to local cache.
-    fetchPinsFromSupabase().then(function(){ initRealtimePins(); });
-    
-    // Add pin on map click (must be after map is initialized)
-    map.on('click', function(e) {
-        // Make sure pins stay within bounds
-        if (
-            e.latlng.lat >= bounds[0][0] && e.latlng.lat <= bounds[1][0] &&
-            e.latlng.lng >= bounds[0][1] && e.latlng.lng <= bounds[1][1]
-        ) {
-            // Ask the user for a name for this pin
-            var name = prompt('Enter a name for this pin:', '');
-            if (name === null) {
-                // User cancelled — don't create the marker
-                return;
-            }
-            name = name.trim();
-            if (name === '') {
-                name = 'Unnamed pin';
-            }
-            var marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
-            marker.bindPopup(name).openPopup();
-
-            // Attempt remote insert; fallback local id if unavailable
-            (async function createAndRegister(){
-                var id = null;
-                if (supabase) {
-                    try {
-                        var ins = await supabase.from('pins').insert({ name: name, lat: e.latlng.lat, lng: e.latlng.lng }).select();
-                        if (!ins.error && ins.data && ins.data.length > 0) {
-                            id = ins.data[0].id;
-                        } else if (ins.error) {
-                            console.warn('Supabase insert failed, using local id:', ins.error);
-                        }
-                    } catch (err) {
-                        console.warn('Supabase insert exception, using local id:', err);
-                    }
-                }
-                if (!id) id = 'pin-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-                pins[id] = { id: id, name: name, marker: marker };
-                addPinToList(id, name, marker);
-                savePins();
-                marker.on('dblclick', function() {
-                    var current = marker.getPopup() ? marker.getPopup().getContent() : '';
-                    var newName = prompt('Rename pin:', current);
-                    if (newName === null) return;
-                    newName = newName.trim();
-                    if (newName === '') newName = 'Unnamed pin';
-                    marker.bindPopup(newName).openPopup();
-                    pins[id].name = newName;
-                    updatePinNameInList(id, newName);
-                    savePins();
-                    if (supabase) {
-                        supabase.from('pins').update({ name: newName, updated_at: new Date().toISOString() }).eq('id', id).then(function(r){ if(r.error) console.warn('Supabase rename failed:', r.error); });
-                    }
-                });
-            })();
-        } else {
-            alert("You can't place a pin outside UP Diliman!");
-        }
-    });
 });
 
 // Theme toggle: persists user's choice in localStorage and updates UI
@@ -488,14 +287,15 @@ function addPinToList(id, name, marker) {
     var label = document.createElement('span');
     label.className = 'pin-label';
     label.textContent = name;
-    // label color is handled via CSS
+    // ensure label is readable inside the hazard list (force black)
+    label.style.color = '#000';
     item.appendChild(label);
 
     // find nearest landmark to this marker using Overpass (async)
     var landmarkSpan = document.createElement('span');
     landmarkSpan.className = 'pin-landmark';
     landmarkSpan.textContent = 'Searching...';
-    // color handled via CSS
+    landmarkSpan.style.color = '#333';
     // do the async lookup and update the UI when ready
     (function(marker, landmarkSpan) {
         var latlng = marker.getLatLng();
@@ -545,11 +345,6 @@ function addPinToList(id, name, marker) {
         delete pins[id];
         // remove the list item
         if (item.parentNode) item.parentNode.removeChild(item);
-        savePins();
-        // Sync delete to Supabase
-        if (supabase) {
-            supabase.from('pins').delete().eq('id', id).then(function(r){ if(r.error) console.warn('Supabase delete failed:', r.error); });
-        }
     });
     controls.appendChild(del);
 
@@ -572,3 +367,34 @@ function updatePinNameInList(id, newName) {
         if (label) label.textContent = newName;
     }
 }
+
+// Add pin on click
+map.on('click', function(e) {
+    // Make sure pins stay within bounds
+    if (
+        e.latlng.lat >= bounds[0][0] && e.latlng.lat <= bounds[1][0] &&
+        e.latlng.lng >= bounds[0][1] && e.latlng.lng <= bounds[1][1]
+    ) {
+        // Ask the user for a name for this pin
+        var name = prompt('Enter a name for this pin:', '');
+        if (name === null) {
+            // User cancelled — don't create the marker
+            return;
+        }
+        name = name.trim();
+        if (name === '') {
+            name = 'Unnamed pin';
+        }
+        var marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+        marker.bindPopup(name).openPopup();
+
+        // Create an id for this pin and store it
+        var id = 'pin-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+        pins[id] = { id: id, name: name, marker: marker };
+
+        // Add to bottom list (also shows nearest landmark)
+        addPinToList(id, name, marker);
+
+        // Allow renaming the pin by double-clicking it
+        marker.on('dblclick', function() {
+            var current = marker.getPopup() ? marker.getPopup().getContent() : '';

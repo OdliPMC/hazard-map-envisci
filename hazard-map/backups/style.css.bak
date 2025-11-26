@@ -121,7 +121,7 @@ header {
 .hazard-list .pin-label,
 .hazard-list .pin-landmark,
 .hazard-list .hazard-item {
-    color: #000 !important;
+    color: #000;
 }
 
 /* Tabs in the sidebar */

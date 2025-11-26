@@ -1,0 +1,54 @@
+Proposed conservative cleanup (DRY-RUN) for review
+
+Summary:
+- Backed up current files into `backups/`.
+- Proposed minimal, reversible edits that remove defensive inline styles in `main.js` and replace with a stronger CSS rule in `style.css`.
+- No source files have been modified yet. This file contains the suggested patch snippets for review. Once you approve, I'll apply the changes and run a quick smoke-check.
+
+Rationale:
+- Currently `main.js` sets inline `label.style.color = '#000'` and `landmarkSpan.style.color = '#333'` to enforce readability when CSS specificity/timing failures occur. It's better to enforce this in CSS for maintainability. We'll remove inline style lines and add a single CSS rule with higher specificity.
+
+Suggested edits (patch snippets):
+
+1) main.js - remove two inline style assignments inside `addPinToList`:
+
+*** Update File: main.js
+@@
+-    // ensure label is readable inside the hazard list (force black)
+-    label.style.color = '#000';
++    // label color is handled via CSS
+@@
+-    landmarkSpan.textContent = 'Searching...';
+-    landmarkSpan.style.color = '#333';
++    landmarkSpan.textContent = 'Searching...';
+
+2) style.css - strengthen rule for hazard list labels (add !important to ensure dominance):
+
+*** Update File: style.css
+@@
+-.hazard-list,
+-.hazard-list .pin-item,
+-.hazard-list .pin-label,
+-.hazard-list .pin-landmark,
+-.hazard-list .hazard-item {
+-    color: #000;
+-}
++.hazard-list,
++.hazard-list .pin-item,
++.hazard-list .pin-label,
++.hazard-list .pin-landmark,
++.hazard-list .hazard-item {
++    color: #000 !important;
++}
+
+Notes and next steps:
+- This is intentionally minimal. It avoids changing functional logic like Overpass/Nominatim lookups or tab behavior.
+- After your approval I will:
+  1. Apply the patch (create a proper git branch if available, otherwise apply and keep backups). 
+  2. Run a quick manual smoke-check (open the site or indicate steps you can run) to confirm the hazard list colors and that no JS errors occur.
+  3. Present the diff for final approval and then mark the cleanup task completed in the todo list.
+
+Please reply with:
+- "Approve" to apply the proposed cleanup now, or
+- "Suggest changes" with instructions for adjustments, or
+- "Hold" to stop here.
