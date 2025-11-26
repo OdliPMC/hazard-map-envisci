@@ -186,11 +186,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         const mod = await import('https://esm.sh/@supabase/supabase-js@2.45.4?target=es2022');
         if (mod && mod.createClient) {
             supabase = mod.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+            var st = document.getElementById('conn-status');
+            if (st) st.textContent = 'Connected to Supabase';
         } else {
             console.warn('Supabase module missing createClient; using local-only pins');
+            var st2 = document.getElementById('conn-status');
+            if (st2) st2.textContent = 'Local-only mode';
         }
     } catch (e) {
         console.warn('Supabase ESM import failed; using local-only pins:', e);
+        var st3 = document.getElementById('conn-status');
+        if (st3) st3.textContent = 'Local-only mode';
     }
     
     // Set DOM reference after elements are ready
