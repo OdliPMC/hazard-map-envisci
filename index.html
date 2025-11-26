@@ -5,8 +5,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <!-- Load Supabase BEFORE main.js so window.supabase is available -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2.39.0/dist/umd/supabase.js" crossorigin="anonymous"></script>
+    <!-- Load Supabase library from CDN (jsdelivr @2) BEFORE main.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <header>
@@ -83,6 +83,7 @@
     </footer>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script defer src="main.js"></script>
+    <!-- Load your main.js script after Supabase and Leaflet -->
+    <script src="main.js"></script>
 </body>
 </html>
