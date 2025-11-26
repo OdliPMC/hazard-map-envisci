@@ -54,37 +54,11 @@ header {
     height: 80px;
 }
 
-/* Fancy display font for the site title */
-.site-title {
-    margin: 0;
-    font-size: 28px;
-    letter-spacing: 2px;
-    color: #5a0000;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.site-title .sec-part {
-    font-family: 'Raleway', sans-serif;
-    font-weight: 700;
-}
-
-.site-title .upd-part {
-    font-family: 'Oswald', sans-serif;
-    font-weight: 600;
-    letter-spacing: 1px;
-}
-
-/* small circular mark left of the title for branding */
-.site-title::before {
-    content: '';
-    display: inline-block;
-    width: 36px;
-    height: 36px;
-    margin-right: 12px;
-    vertical-align: middle;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), var(--maroon-dark));
-    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+/* Site icon */
+.site-icon {
+    height: 60px;
+    width: auto;
+    object-fit: contain;
 }
 
 .container {
