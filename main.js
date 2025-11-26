@@ -456,8 +456,9 @@ function getBuildingAndPOI(latlng, radiusMeters) {
     }
 
     // Query for buildings and named features in parallel to reduce total time
-    var qBuilding = '[out:json][timeout:15];(node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["building"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["building"];relation(around:' + radiusMeters + ',' + lat + ',' + lon + ')["building"];);out center tags;';
-    var qNamed = '[out:json][timeout:15];(node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["name"];relation(around:' + radiusMeters + ',' + lat + ',' + lon + ')["name"];);out center tags;';
+    var qBuilding = '[out:json][timeout:15];(node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["building"]["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["building"]["name"];relation(around:' + radiusMeters + ',' + lat + ',' + lon + ')["building"]["name"];);out center tags;';
+    // Only query for named POIs with useful tags (amenity, tourism, shop, leisure, historic, office)
+    var qNamed = '[out:json][timeout:15];(node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["amenity"]["name"];node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["tourism"]["name"];node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["shop"]["name"];node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["leisure"]["name"];node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["historic"]["name"];node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["office"]["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["amenity"]["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["tourism"]["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["shop"]["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["leisure"]["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["historic"]["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["office"]["name"];);out center tags;';
 
     return Promise.all([fetchOverpass(qBuilding), fetchOverpass(qNamed)]).then(function(results) {
         var jsonB = results[0];
@@ -543,13 +544,13 @@ function getBuildingAndPOI(latlng, radiusMeters) {
                     } catch (e) {}
                     var d = latlng.distanceTo(L.latLng(elLat, elLon));
                     if (d < minDistN) {
-                        // only include named elements
+                        // only include named elements with proper tags
                         if (el.tags && el.tags.name) {
-                            var typeLabel = getTypeFromTags(el.tags, false) || 'Place';
-                            // Skip highways (streets/roads) and generic places without useful types
-                            if (el.tags.highway) return; // Skip roads/streets
-                            if (typeLabel === 'Place' && !el.tags.amenity && !el.tags.tourism && !el.tags.shop && !el.tags.leisure) return;
+                            // Additional safety: skip if it's a highway/street
+                            if (el.tags.highway) return;
+                            if (el.tags.place && !el.tags.amenity && !el.tags.tourism && !el.tags.shop && !el.tags.leisure) return;
                             
+                            var typeLabel = getTypeFromTags(el.tags, false) || 'Place';
                             minDistN = d;
                             var displayName = el.tags.name;
                             nearestN = { name: displayName, dist: d, type: typeLabel };
