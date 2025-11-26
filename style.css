@@ -355,8 +355,8 @@ header {
 /* Footer styling with maroon accents */
 footer {
     text-align: center;
-    background: linear-gradient(180deg, var(--maroon-dark), var(--maroon));
-    color: var(--on-maroon);
+    background: #f5f1e8;
+    color: #5a0000;
     padding: 12px 14px;
     border-top: 4px solid rgba(168,59,59,0.14);
 }
