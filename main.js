@@ -17,6 +17,20 @@ var map = null;
 
 // Keep track of pins (id -> { id, name, marker })
 var pins = {};
+// Build rich HTML for marker popup
+function renderPopupContent(name, landmarkText, latlng) {
+    var coords = latlng ? (Math.round(latlng.lat * 10000) / 10000 + ", " + Math.round(latlng.lng * 10000) / 10000) : '';
+    var lm = landmarkText ? ('<div class="popup-sub">' + landmarkText + '</div>') : '';
+    var ts = new Date().toLocaleString();
+    return (
+        '<div class="popup-card">' +
+            '<div class="popup-title">' + (name || 'Unnamed pin') + '</div>' +
+            lm +
+            (coords ? '<div class="popup-meta">' + coords + '</div>' : '') +
+            '<div class="popup-time">Updated ' + ts + '</div>' +
+        '</div>'
+    );
+}
 
 // LocalStorage key for persistence
 var PINS_STORE_KEY = 'hazardmap-pins-v1';
@@ -49,7 +63,7 @@ function loadPins() {
         if (pins[stored.id]) return;
         var marker = L.marker([stored.lat, stored.lng]).addTo(map);
         var nm = stored.name || 'Unnamed pin';
-        marker.bindPopup(nm);
+        marker.bindPopup(renderPopupContent(nm, null, { lat: stored.lat, lng: stored.lng }));
         pins[stored.id] = { id: stored.id, name: nm, marker: marker };
         addPinToList(stored.id, nm, marker);
         // Allow renaming again
@@ -59,7 +73,7 @@ function loadPins() {
             if (newName === null) return;
             newName = newName.trim();
             if (newName === '') newName = 'Unnamed pin';
-            marker.bindPopup(newName).openPopup();
+            marker.bindPopup(renderPopupContent(newName, null, marker.getLatLng())).openPopup();
             pins[stored.id].name = newName;
             updatePinNameInList(stored.id, newName);
             savePins();
@@ -79,7 +93,7 @@ async function fetchPinsFromSupabase() {
             if (pins[row.id]) return;
             var marker = L.marker([row.lat, row.lng]).addTo(map);
             var nm = row.name || 'Unnamed pin';
-            marker.bindPopup(nm);
+            marker.bindPopup(renderPopupContent(nm, null, { lat: row.lat, lng: row.lng }));
             pins[row.id] = { id: row.id, name: nm, marker: marker };
             addPinToList(row.id, nm, marker);
             marker.on('dblclick', function() {
@@ -88,7 +102,7 @@ async function fetchPinsFromSupabase() {
                 if (newName === null) return;
                 newName = newName.trim();
                 if (newName === '') newName = 'Unnamed pin';
-                marker.bindPopup(newName).openPopup();
+                marker.bindPopup(renderPopupContent(newName, null, marker.getLatLng())).openPopup();
                 pins[row.id].name = newName;
                 updatePinNameInList(row.id, newName);
                 savePins();
@@ -253,7 +267,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 name = 'Unnamed pin';
             }
             var marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
-            marker.bindPopup(name).openPopup();
+            marker.bindPopup(renderPopupContent(name, null, e.latlng)).openPopup();
 
             // Attempt remote insert; fallback local id if unavailable
             (async function createAndRegister(){
@@ -280,7 +294,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     if (newName === null) return;
                     newName = newName.trim();
                     if (newName === '') newName = 'Unnamed pin';
-                    marker.bindPopup(newName).openPopup();
+                    marker.bindPopup(renderPopupContent(newName, null, marker.getLatLng())).openPopup();
                     pins[id].name = newName;
                     updatePinNameInList(id, newName);
                     savePins();
@@ -548,6 +562,12 @@ function addPinToList(id, name, marker) {
             } else {
                 landmarkSpan.textContent = parts.join(' • ');
             }
+                try {
+                    var pinEntry = pins[id] || pins[row && row.id] || null; // best-effort lookup
+                    var mk = pinEntry ? pinEntry.marker : marker;
+                    var nmNow = pinEntry ? pinEntry.name : name;
+                    if (mk) mk.bindPopup(renderPopupContent(nmNow, landmarkSpan.textContent, mk.getLatLng()));
+                } catch (e) {}
         }).catch(function() {
             landmarkSpan.textContent = 'No landmark';
         });

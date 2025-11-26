@@ -313,3 +313,28 @@ footer {
 }
 
 footer p { margin: 0; font-size: 13px; opacity: 0.95 }
+
+/* Popup card styling */
+.leaflet-popup-content .popup-card {
+    font-family: Arial, sans-serif;
+    max-width: 220px;
+}
+.popup-card .popup-title {
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #111;
+}
+.popup-card .popup-sub {
+    font-size: 12px;
+    color: #444;
+    margin-bottom: 4px;
+}
+.popup-card .popup-meta {
+    font-size: 11px;
+    color: #666;
+}
+.popup-card .popup-time {
+    font-size: 10px;
+    color: #888;
+    margin-top: 6px;
+}
