@@ -545,15 +545,27 @@ function getBuildingAndPOI(latlng, radiusMeters) {
                     if (d < minDistN) {
                         // only include named elements
                         if (el.tags && el.tags.name) {
+                            var typeLabel = getTypeFromTags(el.tags, false) || 'Place';
+                            // Skip highways (streets/roads) and generic places without useful types
+                            if (el.tags.highway) return; // Skip roads/streets
+                            if (typeLabel === 'Place' && !el.tags.amenity && !el.tags.tourism && !el.tags.shop && !el.tags.leisure) return;
+                            
                             minDistN = d;
                             var displayName = el.tags.name;
-                            var typeLabel = getTypeFromTags(el.tags, false) || 'Place';
                             nearestN = { name: displayName, dist: d, type: typeLabel };
                         }
                     }
                 }
             });
             if (nearestN) out.poi = nearestN;
+        }
+
+        // Prioritize building over POI if both exist and building is closer or POI is generic
+        if (out.building && out.poi) {
+            // If building is significantly closer (within 50m more) or POI type is too generic, use only building
+            if (out.building.dist < out.poi.dist + 50 || out.poi.type === 'Place') {
+                out.poi = null;
+            }
         }
 
         // If both are null, try Nominatim for a fallback name (address/display)
