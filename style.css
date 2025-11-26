@@ -3,7 +3,7 @@ body {
     font-family: Arial, sans-serif;
     background: var(--page-bg-dark);
     transition: background var(--transition-fast);
-    padding-top: 120px;
+    padding-top: 100px;
 }
 
 /* When the document root has .light-mode, make the page background white */
@@ -37,8 +37,8 @@ header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 14px 18px;
+    gap: 6px;
+    padding: 10px 18px;
     background-color: var(--maroon);
     background-image:
         linear-gradient(90deg, var(--maroon) 50%, var(--maroon-check) 50%),
@@ -52,13 +52,13 @@ header {
     left: 0;
     right: 0;
     z-index: 9999;
-    height: 120px;
+    height: 100px;
 }
 
 /* Fancy display font for the site title */
 .site-title {
     margin: 0;
-    font-size: 48px;
+    font-size: 36px;
     letter-spacing: 2px;
     color: var(--on-maroon);
     text-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -90,7 +90,7 @@ header {
 
 .container {
     display: flex;
-    height: calc(100vh - 170px); /* subtract header height (120px) + footer + margins */
+    height: calc(100vh - 150px); /* subtract header height (100px) + footer + margins */
     max-width: 1100px; /* constrain the UI width so it can be centered */
     margin: 20px auto; /* center horizontally and add vertical spacing */
     box-shadow: 0 4px 18px rgba(0,0,0,0.06);
@@ -395,7 +395,7 @@ footer p { margin: 0; font-size: 13px; opacity: 0.95 }
     .pin-item { padding: 10px 6px; gap: 10px; }
     .pin-delete { padding: 8px 12px; border-radius: 10px; }
     .theme-toggle { top: 8px; right: 8px; }
-    .site-title { font-size: 40px; }
+    .site-title { font-size: 32px; }
 }
 
 /* Popup card styling */
