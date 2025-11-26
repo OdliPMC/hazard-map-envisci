@@ -2,16 +2,6 @@
 var SUPABASE_URL = 'https://oggnnptinplbdmkhkaqh.supabase.co';
 var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nZ25ucHRpbnBsYmRta2hrYXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMTg0MDYsImV4cCI6MjA3OTY5NDQwNn0.0X6PJMoEP6YvU_4g3qn6glHU1Qiuq507gFq79TnyQPQ';
 var supabase = null;
-try {
-    const mod = await import('https://esm.sh/@supabase/supabase-js@2.45.4');
-    if (mod && mod.createClient) {
-        supabase = mod.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
-    } else {
-        console.warn('Supabase module missing createClient; using local-only pins');
-    }
-} catch (e) {
-    console.warn('Supabase ESM import failed; using local-only pins:', e);
-}
 
 // Define the bounds of UP Diliman (approximate)
 var bounds = [
@@ -184,11 +174,23 @@ function initSidebarTabs() {
 }
 
 // initialize sidebar tabs and theme toggle on load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Wait for Leaflet to be available
     if (typeof L === 'undefined') {
         console.error('Leaflet not loaded');
         return;
+    }
+
+    // Initialize Supabase via ESM import (works on GitHub Pages)
+    try {
+        const mod = await import('https://esm.sh/@supabase/supabase-js@2.45.4?target=es2022');
+        if (mod && mod.createClient) {
+            supabase = mod.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+        } else {
+            console.warn('Supabase module missing createClient; using local-only pins');
+        }
+    } catch (e) {
+        console.warn('Supabase ESM import failed; using local-only pins:', e);
     }
     
     // Set DOM reference after elements are ready
