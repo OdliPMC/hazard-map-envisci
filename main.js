@@ -646,7 +646,31 @@ function addPinToList(id, name, marker) {
         'slopes': 'Slopes',
         'other': 'Other / General'
     };
+    var hazardTypeIcons = {
+        'theft': 'hazards-icons/Theft.png',
+        'flooding': 'hazards-icons/Flooding.png',
+        'slippery': 'hazards-icons/Slippery.png',
+        'pets': 'hazards-icons/Stray-Pets.png',
+        'wild-animals': 'hazards-icons/Wild-Animals.png',
+        'construction': 'hazards-icons/Construction.png',
+        'no-lights': 'hazards-icons/No-lights.png',
+        'slopes': 'hazards-icons/Slope.png',
+        'other': null
+    };
     var hazardLabel = hazardTypeLabels[hazardType] || 'Other / General';
+    var hazardIcon = hazardTypeIcons[hazardType];
+
+    // Add icon if available
+    if (hazardIcon) {
+        var icon = document.createElement('img');
+        icon.src = hazardIcon;
+        icon.alt = '';
+        icon.style.width = '20px';
+        icon.style.height = '20px';
+        icon.style.marginRight = '8px';
+        icon.style.verticalAlign = 'middle';
+        item.appendChild(icon);
+    }
 
     var label = document.createElement('span');
     label.className = 'pin-label';
