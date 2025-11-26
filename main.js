@@ -1,15 +1,16 @@
-// Supabase configuration (uses global supabase from CDN)
+// Supabase configuration (ESM import via esm.sh for GitHub Pages)
 var SUPABASE_URL = 'https://oggnnptinplbdmkhkaqh.supabase.co';
 var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nZ25ucHRpbnBsYmRta2hrYXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMTg0MDYsImV4cCI6MjA3OTY5NDQwNn0.0X6PJMoEP6YvU_4g3qn6glHU1Qiuq507gFq79TnyQPQ';
 var supabase = null;
 try {
-    if (window.supabase && window.supabase.createClient) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+    const mod = await import('https://esm.sh/@supabase/supabase-js@2.45.4');
+    if (mod && mod.createClient) {
+        supabase = mod.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
     } else {
-        console.warn('Supabase library not loaded; using local-only pins');
+        console.warn('Supabase module missing createClient; using local-only pins');
     }
 } catch (e) {
-    console.warn('Supabase init failed; using local-only pins:', e);
+    console.warn('Supabase ESM import failed; using local-only pins:', e);
 }
 
 // Define the bounds of UP Diliman (approximate)

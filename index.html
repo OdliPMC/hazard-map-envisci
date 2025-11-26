@@ -5,8 +5,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <!-- Load Supabase library from CDN (jsdelivr @2) BEFORE main.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase will be imported as an ES module inside main.js via esm.sh -->
 </head>
 <body>
     <header>
@@ -83,7 +82,7 @@
     </footer>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <!-- Load your main.js script after Supabase and Leaflet -->
-    <script src="main.js"></script>
+    <!-- Load app as module so it can import Supabase from esm.sh -->
+    <script type="module" src="main.js"></script>
 </body>
 </html>
