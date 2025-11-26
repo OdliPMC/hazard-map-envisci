@@ -246,6 +246,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     initSidebarTabs(); 
     initThemeToggle();
+    initNameDialog();
     // Fetch shared pins first; fallback to local cache.
     fetchPinsFromSupabase().then(function(){ initRealtimePins(); });
     
@@ -256,18 +257,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             e.latlng.lat >= bounds[0][0] && e.latlng.lat <= bounds[1][0] &&
             e.latlng.lng >= bounds[0][1] && e.latlng.lng <= bounds[1][1]
         ) {
-            // Ask the user for a friendly name for this pin
-            var name = prompt('Name this pin (e.g., "Broken sidewalk near Palma Hall"):', '');
-            if (name === null) {
-                // User cancelled — don't create the marker
-                return;
-            }
-            name = name.trim();
-            if (name === '') {
-                name = 'Unnamed pin';
-            }
-            var marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
-            marker.bindPopup(renderPopupContent(name, null, e.latlng)).openPopup();
+            // Open name dialog; continue after user confirms
+            openNameDialog('', async function(name) {
+                name = (name || '').trim();
+                if (name === '') name = 'Unnamed pin';
+                var marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+                marker.bindPopup(renderPopupContent(name, null, e.latlng)).openPopup();
 
             // Attempt remote insert; fallback local id if unavailable
             (async function createAndRegister(){
@@ -289,20 +284,22 @@ document.addEventListener('DOMContentLoaded', async function() {
                 addPinToList(id, name, marker);
                 savePins();
                 marker.on('dblclick', function() {
-                    var current = pins[id] ? pins[id].name : (marker.getPopup() ? marker.getPopup().getContent() : '');
-                    var newName = prompt('Rename this pin (keep it short and clear):', current);
-                    if (newName === null) return;
-                    newName = newName.trim();
-                    if (newName === '') newName = 'Unnamed pin';
-                    marker.bindPopup(renderPopupContent(newName, null, marker.getLatLng())).openPopup();
-                    pins[id].name = newName;
-                    updatePinNameInList(id, newName);
-                    savePins();
-                    if (supabase) {
-                        supabase.from('pins').update({ name: newName, updated_at: new Date().toISOString() }).eq('id', id).then(function(r){ if(r.error) console.warn('Supabase rename failed:', r.error); });
-                    }
+                    var current = pins[id] ? pins[id].name : '';
+                    openNameDialog(current, function(newName) {
+                        if (newName === null) return;
+                        newName = (newName || '').trim();
+                        if (newName === '') newName = 'Unnamed pin';
+                        marker.bindPopup(renderPopupContent(newName, null, marker.getLatLng())).openPopup();
+                        pins[id].name = newName;
+                        updatePinNameInList(id, newName);
+                        savePins();
+                        if (supabase) {
+                            supabase.from('pins').update({ name: newName, updated_at: new Date().toISOString() }).eq('id', id).then(function(r){ if(r.error) console.warn('Supabase rename failed:', r.error); });
+                        }
+                    });
                 });
             })();
+            });
         } else {
             alert("You can't place a pin outside UP Diliman!");
         }
@@ -594,4 +591,38 @@ function updatePinNameInList(id, newName) {
         var label = item.querySelector('.pin-label');
         if (label) label.textContent = newName;
     }
+}
+
+// Lightweight name dialog helpers
+function initNameDialog() {
+    var dlg = document.getElementById('name-dialog');
+    var input = document.getElementById('name-dialog-input');
+    var btnSave = document.getElementById('name-dialog-save');
+    var btnCancel = document.getElementById('name-dialog-cancel');
+    if (!dlg || !input || !btnSave || !btnCancel) return;
+    // close on Esc or backdrop click
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeNameDialog(null); });
+    document.querySelector('.name-dialog-backdrop').addEventListener('click', function(){ closeNameDialog(null); });
+}
+
+var _nameDialogResolver = null;
+function openNameDialog(initialValue, onDone) {
+    var dlg = document.getElementById('name-dialog');
+    var input = document.getElementById('name-dialog-input');
+    var btnSave = document.getElementById('name-dialog-save');
+    var btnCancel = document.getElementById('name-dialog-cancel');
+    if (!dlg || !input || !btnSave || !btnCancel) { onDone && onDone(initialValue || ''); return; }
+    dlg.hidden = false; dlg.setAttribute('aria-hidden', 'false');
+    input.value = initialValue || '';
+    setTimeout(function(){ input.focus(); input.select(); }, 50);
+    _nameDialogResolver = onDone;
+    btnSave.onclick = function(){ closeNameDialog(input.value); };
+    btnCancel.onclick = function(){ closeNameDialog(null); };
+}
+
+function closeNameDialog(result) {
+    var dlg = document.getElementById('name-dialog');
+    if (dlg) { dlg.hidden = true; dlg.setAttribute('aria-hidden', 'true'); }
+    var cb = _nameDialogResolver; _nameDialogResolver = null;
+    if (cb) cb(result);
 }

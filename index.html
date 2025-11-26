@@ -72,6 +72,20 @@
         <p>© 2025 Hazard Map Project <span id="conn-status" class="conn-status" aria-live="polite" style="margin-left:8px;color:#7aa2f7"></span></p>
     </footer>
 
+    <!-- Lightweight Pin Name Dialog -->
+    <div id="name-dialog" class="name-dialog" hidden aria-hidden="true" role="dialog" aria-labelledby="name-dialog-title">
+        <div class="name-dialog-backdrop"></div>
+        <div class="name-dialog-card">
+            <h4 id="name-dialog-title">Name this pin</h4>
+            <p class="name-dialog-help">Keep it short and clear (e.g., "Broken sidewalk near Palma Hall").</p>
+            <input id="name-dialog-input" type="text" maxlength="80" placeholder="Enter pin name" aria-label="Pin name" />
+            <div class="name-dialog-actions">
+                <button id="name-dialog-cancel" class="btn-secondary" type="button">Cancel</button>
+                <button id="name-dialog-save" class="btn-primary" type="button">Save</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <!-- Load app as module so it can import Supabase from esm.sh -->
     <script type="module" src="main.js"></script>
