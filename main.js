@@ -122,7 +122,7 @@ function loadPins() {
         if (pins[stored.id]) return;
         var hazardType = stored.hazardType || 'other';
         var icon = createHazardIcon(hazardType);
-        var marker = L.marker([stored.lat, stored.lng], { icon: icon }).addTo(map);
+        var marker = L.marker([stored.lat, stored.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
         var nm = stored.name || 'Unnamed pin';
         marker.bindPopup(renderPopupContent(nm, null, { lat: stored.lat, lng: stored.lng }));
         pins[stored.id] = { id: stored.id, name: nm, marker: marker, hazardType: hazardType };
@@ -168,7 +168,7 @@ async function fetchPinsFromSupabase() {
             if (pins[row.id]) return;
             var hazardType = row.hazard_type || 'other';
             var icon = createHazardIcon(hazardType);
-            var marker = L.marker([row.lat, row.lng], { icon: icon }).addTo(map);
+            var marker = L.marker([row.lat, row.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
             var nm = row.name || 'Unnamed pin';
             marker.bindPopup(renderPopupContent(nm, null, { lat: row.lat, lng: row.lng }));
             pins[row.id] = { id: row.id, name: nm, marker: marker, hazardType: hazardType, updated_at: row.updated_at || row.created_at };
@@ -215,7 +215,7 @@ function initRealtimePins() {
             if (!row || pins[row.id]) return;
             var hazardType = row.hazard_type || 'other';
             var icon = createHazardIcon(hazardType);
-            var marker = L.marker([row.lat, row.lng], { icon: icon }).addTo(map);
+            var marker = L.marker([row.lat, row.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
             var nm = row.name || 'Unnamed pin';
             marker.bindPopup(nm);
             pins[row.id] = { id: row.id, name: nm, marker: marker, hazardType: hazardType, updated_at: row.updated_at || row.created_at };
@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (name === '') return; // Don't save empty pins
                 
                 var icon = createHazardIcon(hazardType);
-                var marker = L.marker([e.latlng.lat, e.latlng.lng], { icon: icon }).addTo(map);
+                var marker = L.marker([e.latlng.lat, e.latlng.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
                 marker.bindPopup(renderPopupContent(name, null, e.latlng)).openPopup();
 
             // Attempt remote insert; fallback local id if unavailable
