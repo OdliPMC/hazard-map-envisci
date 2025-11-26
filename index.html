@@ -17,11 +17,10 @@
         <!-- Tabs moved to the top header area -->
         <nav class="tabs" aria-label="Top header tabs">
             <div class="tab-buttons" role="tablist" aria-label="Top sections">
-                <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-hazards" id="tab-btn-hazards">Hazards</button>
                 <button class="tab-button active" role="tab" aria-selected="true" aria-controls="tab-who" id="tab-btn-who">Who we are</button>
-                <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-updates" id="tab-btn-updates">Site Updates</button>
-                <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-disclaimer" id="tab-btn-disclaimer">Disclaimer</button>
                 <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-instructions" id="tab-btn-instructions">Instructions</button>
+                <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-hazards" id="tab-btn-hazards">Hazards</button>
+                <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-disclaimer" id="tab-btn-disclaimer">Disclaimer</button>
             </div>
         </nav>
     </header>
@@ -30,24 +29,9 @@
         <aside class="sidebar">
             <!-- Tab panels for the header tabs (content shown in the sidebar) -->
             <div class="tab-panels">
-                <div id="tab-hazards" class="tab-panel hazard-panel" role="tabpanel" aria-labelledby="tab-btn-hazards" hidden>
-                    <h3>Hazard List</h3>
-                    <div class="hazard-list" id="hazard-list">
-                        <!-- hazard items will be shown here -->
-                        <p class="muted">No hazards listed yet.</p>
-                    </div>
-                </div>
-
                 <div id="tab-who" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-who">
                     <h3>Who we are</h3>
                     <p>This website was created by the group BLOOMS as a final project requirement for Env Sci WFW, 1st Sem, AY ‘25-’26. The goal of this project is to make a community-sustained hazard map for UP Diliman to encourage students and community-goers alike to safely travel through the campus on foot, therefore reducing their collective carbon footprint. We, members of BLOOMS, hope that you, the user, would find this website helpful and use it for its intended purpose. Thank you and stay safe!</p>
-                </div>
-
-                
-
-                <div id="tab-disclaimer" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-disclaimer" hidden>
-                    <h3>Disclaimer</h3>
-                    <p>The data shown is for demonstration only. Overpass and Nominatim lookups are subject to external service availability and may be rate-limited.</p>
                 </div>
                 <div id="tab-instructions" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-instructions" hidden>
                     <h3>Instructions</h3>
@@ -62,6 +46,19 @@
                         <li><strong>Bounds:</strong> Pins can only be placed within the defined UP Diliman boundary; clicks outside are rejected.</li>
                         <li><strong>Accessibility:</strong> You can focus list items with Tab and press Enter/Space to activate tabs.</li>
                     </ul>
+                </div>
+
+                <div id="tab-hazards" class="tab-panel hazard-panel" role="tabpanel" aria-labelledby="tab-btn-hazards" hidden>
+                    <h3>Hazard List</h3>
+                    <div class="hazard-list" id="hazard-list">
+                        <!-- hazard items will be shown here -->
+                        <p class="muted">No hazards listed yet.</p>
+                    </div>
+                </div>
+
+                <div id="tab-disclaimer" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-disclaimer" hidden>
+                    <h3>Disclaimer</h3>
+                    <p>The data shown is for demonstration only. Overpass and Nominatim lookups are subject to external service availability and may be rate-limited.</p>
                 </div>
             </div>
         </aside>
