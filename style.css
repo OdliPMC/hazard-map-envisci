@@ -353,6 +353,45 @@ footer p { margin: 0; font-size: 13px; opacity: 0.95 }
 
 /* Mobile responsiveness */
 @media (max-width: 640px) {
+    body {
+        padding-top: 70px; /* Smaller header on mobile */
+    }
+    
+    header {
+        height: 70px;
+        padding: 0 12px;
+        gap: 8px;
+        background-size: auto 70px;
+    }
+    
+    .site-icon {
+        height: 45px;
+    }
+    
+    .tabs {
+        flex: 1;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .tab-buttons {
+        flex-wrap: nowrap;
+        gap: 4px;
+    }
+    
+    .tab-button {
+        font-size: 11px;
+        padding: 5px 8px;
+        white-space: nowrap;
+    }
+    
+    .theme-toggle {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+        padding: 0;
+    }
+    
     .container {
         flex-direction: column;
         height: auto;
@@ -361,20 +400,92 @@ footer p { margin: 0; font-size: 13px; opacity: 0.95 }
         border-radius: 0;
         box-shadow: none;
     }
+    
     .sidebar {
         width: 100%;
         order: 2;
+        max-height: 50vh;
+        padding: 12px;
     }
+    
     .map-container {
         order: 1;
         padding: 8px;
+        height: 50vh;
     }
-    #map { height: 60vh; }
-    .pin-list { max-height: 40vh; }
-    .pin-item { padding: 10px 6px; gap: 10px; }
-    .pin-delete { padding: 8px 12px; border-radius: 10px; }
-    .theme-toggle { top: 8px; right: 8px; }
-    .site-title { font-size: 24px; }
+    
+    #map { 
+        height: 100%;
+        min-height: 300px;
+    }
+    
+    .pin-list { 
+        max-height: calc(50vh - 100px);
+    }
+    
+    .pin-item { 
+        padding: 12px 8px;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .pin-item img {
+        width: 28px !important;
+        height: 28px !important;
+    }
+    
+    .pin-delete { 
+        padding: 10px;
+        min-width: 40px;
+        min-height: 40px;
+    }
+    
+    .hazard-type-item img {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    
+    .name-dialog-card {
+        width: min(420px, 90vw);
+        padding: 14px 16px;
+    }
+    
+    #name-dialog-input,
+    #hazard-type-select {
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 12px;
+    }
+    
+    .btn-primary, .btn-secondary {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+    
+    footer {
+        font-size: 12px;
+        padding: 10px 12px;
+    }
+}
+
+/* Tablet optimization */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .container {
+        max-width: 100%;
+        margin: 15px;
+        height: calc(100vh - 110px);
+    }
+    
+    .sidebar {
+        width: 280px;
+    }
+    
+    header {
+        padding: 0 16px;
+    }
+    
+    .site-icon {
+        height: 50px;
+    }
 }
 
 /* Popup card styling */
