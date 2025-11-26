@@ -224,10 +224,6 @@ function initRealtimePins() {
             var item = pinListContainer ? pinListContainer.querySelector('[data-pin-id="' + id + '"]') : null;
             if (item && item.parentNode) item.parentNode.removeChild(item);
             savePins();
-        })
-        .subscribe(function(status) {
-            if (status === 'SUBSCRIBED') console.log('Realtime pins subscribed');
-            if (status === 'SUBSCRIBED') showToast('Realtime connected');
         });
 }
 
