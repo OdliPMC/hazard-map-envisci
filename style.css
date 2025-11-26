@@ -276,9 +276,9 @@ header {
 
 /* Delete button inside pin item */
 .pin-delete {
-    background: rgba(255,255,255,0.08);
-    border: none;
-    color: var(--on-maroon);
+    background: transparent;
+    border: 1px solid #000;
+    color: #000;
     font-weight: 700;
     cursor: pointer;
     padding: 4px 8px;
@@ -287,7 +287,8 @@ header {
 }
 
 .pin-delete:hover {
-    background: rgba(255,255,255,0.16);
+    background: #000;
+    color: #fff;
 }
 
 /* Footer styling with maroon accents */
