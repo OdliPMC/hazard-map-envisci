@@ -358,7 +358,6 @@ footer {
     background: #f5f1e8;
     color: #5a0000;
     padding: 12px 14px;
-    border-top: 4px solid rgba(168,59,59,0.14);
 }
 
 footer p { margin: 0; font-size: 13px; opacity: 0.95 }
