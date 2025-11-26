@@ -513,15 +513,16 @@ function addPinToList(id, name, marker) {
     del.style.marginRight = '8px';
     del.addEventListener('click', function(ev) {
         ev.stopPropagation();
-        var doDelete = confirm('Delete pin "' + name + '"?');
-        if (!doDelete) return;
-        try { marker.remove(); } catch (e) { if (map.hasLayer(marker)) map.removeLayer(marker); }
-        delete pins[id];
-        if (item.parentNode) item.parentNode.removeChild(item);
-        savePins();
-        if (supabase) {
-            supabase.from('pins').delete().eq('id', id).then(function(r){ if(r.error) console.warn('Supabase delete failed:', r.error); });
-        }
+        openDeleteDialog(function(confirmed){
+            if (!confirmed) return;
+            try { marker.remove(); } catch (e) { if (map.hasLayer(marker)) map.removeLayer(marker); }
+            delete pins[id];
+            if (item.parentNode) item.parentNode.removeChild(item);
+            savePins();
+            if (supabase) {
+                supabase.from('pins').delete().eq('id', id).then(function(r){ if(r.error) console.warn('Supabase delete failed:', r.error); });
+            }
+        });
     });
     item.appendChild(del);
 
@@ -591,6 +592,20 @@ function updatePinNameInList(id, newName) {
         var label = item.querySelector('.pin-label');
         if (label) label.textContent = newName;
     }
+}
+
+// Delete confirmation dialog helpers
+function openDeleteDialog(onDone) {
+    var dlg = document.getElementById('delete-dialog');
+    var btnConfirm = document.getElementById('delete-dialog-confirm');
+    var btnCancel = document.getElementById('delete-dialog-cancel');
+    if (!dlg || !btnConfirm || !btnCancel) { onDone && onDone(false); return; }
+    dlg.hidden = false; dlg.setAttribute('aria-hidden', 'false');
+    var close = function(result){ dlg.hidden = true; dlg.setAttribute('aria-hidden', 'true'); onDone && onDone(result); };
+    btnConfirm.onclick = function(){ close(true); };
+    btnCancel.onclick = function(){ close(false); };
+    document.addEventListener('keydown', function esc(e){ if(e.key==='Escape'){ document.removeEventListener('keydown', esc); close(false); } });
+    document.querySelector('#delete-dialog .name-dialog-backdrop').onclick = function(){ close(false); };
 }
 
 // Lightweight name dialog helpers

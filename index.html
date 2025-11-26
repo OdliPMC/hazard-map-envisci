@@ -33,7 +33,7 @@
                 <div id="tab-who" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-who">
                     <h3>Who we are</h3>
                     <p><strong>SECUPD:</strong> Security, Environment, and Crisis mapping of UP Diliman<p>
-                    <p>This website was created by the group BLOOMS as a final project requirement for Env Sci WFW, 1st Sem, AY ‘25-’26. The goal of this project is to make a community-sustained hazard map for UP Diliman to encourage students and community-goers alike to safely travel through the campus on foot, therefore reducing their collective carbon footprint. We, members of BLOOMS, hope that you, the user, would find this website helpful and use it for its intended purpose. Thank you and stay safe! Our site's name comes from the word Balaot. A term meaning “finding one’s way through a dense/tangled area.”</p>
+                    <p>This website was created by the group BLOOMS as a final project requirement for Env Sci WFW, 1st Sem, AY ‘25-’26. The goal of this project is to make a community-sustained hazard map for UP Diliman to encourage students and community-goers alike to safely travel through the campus on foot, therefore reducing their collective carbon footprint. We, members of BLOOMS, hope that you, the user, would find this website helpful and use it for its intended purpose.</p>
                 </div>
                 <div id="tab-instructions" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-instructions" hidden>
                     <h3>Instructions</h3>
@@ -84,6 +84,19 @@
             <div class="name-dialog-actions">
                 <button id="name-dialog-cancel" class="btn-secondary" type="button">Cancel</button>
                 <button id="name-dialog-save" class="btn-primary" type="button">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Dialog -->
+    <div id="delete-dialog" class="name-dialog" hidden aria-hidden="true" role="dialog" aria-labelledby="delete-dialog-title">
+        <div class="name-dialog-backdrop"></div>
+        <div class="name-dialog-card">
+            <h4 id="delete-dialog-title">Delete this pin?</h4>
+            <p class="name-dialog-help">This action cannot be undone.</p>
+            <div class="name-dialog-actions">
+                <button id="delete-dialog-cancel" class="btn-secondary" type="button">Cancel</button>
+                <button id="delete-dialog-confirm" class="btn-primary" type="button">Delete</button>
             </div>
         </div>
     </div>
