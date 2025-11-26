@@ -498,7 +498,7 @@ function addPinToList(id, name, marker) {
     var del = document.createElement('button');
     del.className = 'pin-delete';
     del.setAttribute('aria-label', 'Delete pin ' + name);
-    del.textContent = '✕';
+    del.innerHTML = '<svg class="icon-trash" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6a1 1 0 0 1 1 1v2h4a1 1 0 1 1 0 2h-1.05l-1.02 12.24A3 3 0 0 1 15.94 23H8.06a3 3 0 0 1-2.99-2.76L4.05 8H3a1 1 0 1 1 0-2h4V4a1 1 0 0 1 1-1Zm1 3h4V5h-4v1ZM6.06 8l.97 11.64A1 1 0 0 0 8.06 21h7.88a1 1 0 0 0 1.03-.96L18.94 8H6.06ZM10 10a1 1 0 0 1 1 1v7a1 1 0 1 1-2 0v-7a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v7a1 1 0 1 1-2 0v-7a1 1 0 0 1 1-1Z"/></svg>';
     del.style.marginRight = '8px';
     del.addEventListener('click', function(ev) {
         ev.stopPropagation();
