@@ -41,7 +41,7 @@ header {
     padding: 8px 18px;
     background-color: #f5f1e8;
     background-image: url('header-bg.png');
-    background-size: auto 100%;
+    background-size: auto 80px;
     background-position: left center;
     background-repeat: repeat-x;
     box-shadow: 0 6px 24px rgba(0,0,0,0.12);
