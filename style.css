@@ -3,6 +3,7 @@ body {
     font-family: Arial, sans-serif;
     background: var(--page-bg-dark);
     transition: background var(--transition-fast);
+    padding-top: 140px;
 }
 
 /* When the document root has .light-mode, make the page background white */
@@ -46,7 +47,12 @@ header {
     background-position: 0 0, 18px 18px; /* checkerboard offset */
     box-shadow: 0 6px 24px rgba(0,0,0,0.12);
     border-bottom: 4px solid rgba(168,59,59,0.12);
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: 140px;
 }
 
 /* Fancy display font for the site title */
@@ -84,7 +90,7 @@ header {
 
 .container {
     display: flex;
-    height: calc(100vh - 100px); /* subtract header+footer height */
+    height: calc(100vh - 190px); /* subtract header height (140px) + footer + margins */
     max-width: 1100px; /* constrain the UI width so it can be centered */
     margin: 20px auto; /* center horizontally and add vertical spacing */
     box-shadow: 0 4px 18px rgba(0,0,0,0.06);

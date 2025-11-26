@@ -352,12 +352,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Attempt remote insert; fallback local id if unavailable
             (async function createAndRegister(){
                 var id = null;
+                var updated_at = null;
                 if (supabase) {
                     try {
                         var ins = await supabase.from('pins').insert({ name: name, lat: e.latlng.lat, lng: e.latlng.lng, hazard_type: hazardType }).select();
                         if (!ins.error && ins.data && ins.data.length > 0) {
                             id = ins.data[0].id;
-                            pins[id].updated_at = ins.data[0].updated_at || ins.data[0].created_at;
+                            updated_at = ins.data[0].updated_at || ins.data[0].created_at;
                         } else if (ins.error) {
                             console.warn('Supabase insert failed, using local id:', ins.error);
                         }
@@ -366,7 +367,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     }
                 }
                 if (!id) id = 'pin-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-                pins[id] = { id: id, name: name, marker: marker, hazardType: hazardType };
+                pins[id] = { id: id, name: name, marker: marker, hazardType: hazardType, updated_at: updated_at };
                 addPinToList(id, name, marker);
                 savePins();
                 marker.on('dblclick', function() {
