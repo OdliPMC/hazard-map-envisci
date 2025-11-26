@@ -644,6 +644,37 @@ function addPinToList(id, name, marker) {
     label.textContent = hazardLabel;
     item.appendChild(label);
 
+    // Lookup landmark and update marker popup (async)
+    (function(marker) {
+        var latlng = marker.getLatLng();
+        getBuildingAndPOI(latlng, 400).then(function(res) {
+            var landmarkText = null;
+            if (res) {
+                var parts = [];
+                if (res.building && res.building.name) {
+                    parts.push((res.building.type || 'Building') + ': ' + res.building.name + ' (' + Math.round(res.building.dist) + ' m)');
+                }
+                if (res.poi && res.poi.name) {
+                    var poiLabel = res.poi.name;
+                    if (!res.building || (res.building.name !== poiLabel)) {
+                        parts.push('Nearest: ' + (res.poi.type || 'Place') + ': ' + poiLabel + ' (' + Math.round(res.poi.dist) + ' m)');
+                    }
+                }
+                landmarkText = parts.length > 0 ? parts.join(' • ') : null;
+            }
+            // Update marker popup with landmark info
+            try {
+                var pinEntry = pins[id];
+                if (pinEntry && pinEntry.marker) {
+                    var nm = pinEntry.name || name;
+                    pinEntry.marker.bindPopup(renderPopupContent(nm, landmarkText, pinEntry.marker.getLatLng()));
+                }
+            } catch (e) {}
+        }).catch(function(err) {
+            console.warn('Landmark lookup error:', err);
+        });
+    })(marker);
+
     // click list item to pan to marker and open popup
     item.addEventListener('click', function() {
         map.setView(marker.getLatLng(), Math.max(map.getZoom(), 16));
