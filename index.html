@@ -21,7 +21,7 @@
                 <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-instructions" id="tab-btn-instructions">Instructions</button>
                 <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-hazard-types" id="tab-btn-hazard-types">Hazard Types</button>
                 <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-hazards" id="tab-btn-hazards">Hazards</button>
-                <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-disclaimer" id="tab-btn-disclaimer">Disclaimer</button>
+                <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-disclaimer" id="tab-btn-disclaimer">Feedback</button>
             </div>
         </nav>
     </header>
@@ -39,14 +39,15 @@
                     <h3>Instructions</h3>
                     <ul>
                         <li><strong>Add a pin:</strong> Click anywhere inside the campus bounds on the map, enter a name, and select a hazard type. The pin appears with a color-coded marker in the Hazards list.</li>
+                        <li><strong>Voting system:</strong> On the Hazards tab, you can vote for hazards by upvoting or downvoting pins to indicate their reliability.</li>
                         <li><strong>Hazard types:</strong> See the Hazard Types tab for all available categories. Each type has its own colored pin on the map.</li>
                         <li><strong>Rename a pin:</strong> Double‑click the marker on the map and enter the new name or change the hazard type.</li>
                         <li><strong>Locate a pin:</strong> Click its entry in the Hazards list to center the map and open its popup.</li>
                         <li><strong>Delete a pin:</strong> Use the black trash icon on the left of the item, then confirm.</li>
-                        <li><strong>Nearest landmark:</strong> After adding a pin the website shows your nearest landmark; results show on the Hazards Tab.</li>
-                        <li><strong>Theme toggle:</strong> Use the moon/sun button (top right) to switch dark/light modes.</li>
-                        <li><strong>Shared pins:</strong> When connected, pins sync via Supabase (footer shows status). If offline, changes save locally.</li>
+                        <li><strong>Nearest landmark:</strong> After adding a pin it also shows your nearest landmark; results show on the Hazards Tab.</li>
+                        <li><strong>Shared pins:</strong> When connected, pins sync via a database.</li>
                         <li><strong>Bounds:</strong> Pins can only be placed within the defined UP Diliman boundary; clicks outside are rejected.</li>
+                        <li><strong>Dark/Light mode:</strong> Use the moon/sun button (top right) to switch dark/light modes.</li>
                     </ul>
                 </div>
 
@@ -105,8 +106,9 @@
                 </div>
 
                 <div id="tab-disclaimer" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-disclaimer" hidden>
-                    <h3>Disclaimer</h3>
-                    <p>The data shown is for demonstration only. Overpass and Nominatim lookups are subject to external service availability and may be rate-limited.</p>
+                    <h3>Feedback</h3>
+                    <p>We'd love to hear your thoughts! Please share your feedback using the form below:</p>
+                    <p style="margin-top: 12px;"><a href="https://tinyurl.com/SECUPDFeedback" target="_blank" rel="noopener noreferrer" style="color: #5a0000; font-weight: 600; text-decoration: underline;">Submit Feedback Form</a></p>
                 </div>
             </div>
         </aside>
