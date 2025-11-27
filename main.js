@@ -94,14 +94,14 @@ function renderPopupContent(name, landmarkText, latlng) {
 // LocalStorage key for persistence
 var PINS_STORE_KEY = 'hazardmap-pins-v2';
 
-// Persist current pins (id, name, lat, lng, hazardType)
+// Persist current pins (id, name, lat, lng, hazardType, upvotes)
 function savePins() {
     var arr = [];
     Object.keys(pins).forEach(function(id) {
         var p = pins[id];
         if (p && p.marker) {
             var ll = p.marker.getLatLng();
-            arr.push({ id: id, name: p.name, lat: ll.lat, lng: ll.lng, hazardType: p.hazardType || 'other' });
+            arr.push({ id: id, name: p.name, lat: ll.lat, lng: ll.lng, hazardType: p.hazardType || 'other', upvotes: p.upvotes || 0 });
         }
     });
     var payload = { version: 1, pins: arr };
@@ -125,7 +125,7 @@ function loadPins() {
         var marker = L.marker([stored.lat, stored.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
         var nm = stored.name || 'Unnamed pin';
         marker.bindPopup(renderPopupContent(nm, null, { lat: stored.lat, lng: stored.lng }));
-        pins[stored.id] = { id: stored.id, name: nm, marker: marker, hazardType: hazardType };
+        pins[stored.id] = { id: stored.id, name: nm, marker: marker, hazardType: hazardType, upvotes: stored.upvotes || 0 };
         addPinToList(stored.id, nm, marker);
         // Allow renaming again
         marker.on('dblclick', function() {
@@ -171,7 +171,7 @@ async function fetchPinsFromSupabase() {
             var marker = L.marker([row.lat, row.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
             var nm = row.name || 'Unnamed pin';
             marker.bindPopup(renderPopupContent(nm, null, { lat: row.lat, lng: row.lng }));
-            pins[row.id] = { id: row.id, name: nm, marker: marker, hazardType: hazardType, updated_at: row.updated_at || row.created_at };
+            pins[row.id] = { id: row.id, name: nm, marker: marker, hazardType: hazardType, upvotes: row.upvotes || 0, updated_at: row.updated_at || row.created_at };
             addPinToList(row.id, nm, marker);
             marker.on('dblclick', function() {
                 var current = pins[row.id] ? pins[row.id].name : '';
@@ -218,7 +218,7 @@ function initRealtimePins() {
             var marker = L.marker([row.lat, row.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
             var nm = row.name || 'Unnamed pin';
             marker.bindPopup(nm);
-            pins[row.id] = { id: row.id, name: nm, marker: marker, hazardType: hazardType, updated_at: row.updated_at || row.created_at };
+            pins[row.id] = { id: row.id, name: nm, marker: marker, hazardType: hazardType, upvotes: row.upvotes || 0, updated_at: row.updated_at || row.created_at };
             addPinToList(row.id, nm, marker);
             showToast('New pin added');
         })
@@ -235,6 +235,15 @@ function initRealtimePins() {
                     var newIcon = createHazardIcon(newHazardType);
                     local.marker.setIcon(newIcon);
                     local.hazardType = newHazardType;
+                }
+                // Update upvotes if changed
+                if (row.upvotes !== undefined && row.upvotes !== local.upvotes) {
+                    local.upvotes = row.upvotes;
+                    var item = pinListContainer ? pinListContainer.querySelector('[data-pin-id="' + row.id + '"]') : null;
+                    if (item) {
+                        var upvoteBtn = item.querySelector('.pin-upvote .upvote-count');
+                        if (upvoteBtn) upvoteBtn.textContent = row.upvotes;
+                    }
                 }
                 local.updated_at = incomingTime;
                 updatePinNameInList(row.id, local.name);
@@ -255,6 +264,48 @@ function initRealtimePins() {
 
 // Reference to the hazard list container (left sidebar). Will be set after DOM loads.
 var pinListContainer = null;
+
+// Handle upvote functionality
+function handleUpvote(pinId, button) {
+    if (!pins[pinId]) return;
+    
+    // Check if user already upvoted (stored in localStorage)
+    var upvotedPins = [];
+    try {
+        var stored = localStorage.getItem('hazardmap-upvoted');
+        if (stored) upvotedPins = JSON.parse(stored);
+    } catch (e) {}
+    
+    if (upvotedPins.indexOf(pinId) !== -1) {
+        showToast('You already upvoted this hazard');
+        return;
+    }
+    
+    // Increment upvote count
+    pins[pinId].upvotes = (pins[pinId].upvotes || 0) + 1;
+    
+    // Update button display
+    var countSpan = button.querySelector('.upvote-count');
+    if (countSpan) countSpan.textContent = pins[pinId].upvotes;
+    button.classList.add('upvoted');
+    
+    // Save to localStorage
+    upvotedPins.push(pinId);
+    try {
+        localStorage.setItem('hazardmap-upvoted', JSON.stringify(upvotedPins));
+    } catch (e) {}
+    
+    savePins();
+    
+    // Update in Supabase
+    if (supabase) {
+        supabase.from('pins').update({ upvotes: pins[pinId].upvotes }).eq('id', pinId).then(function(r) {
+            if (r.error) console.warn('Supabase upvote failed:', r.error);
+        });
+    }
+    
+    showToast('Upvoted! Thanks for confirming');
+}
 
 // Sidebar tab behavior: switch visible tab panel and update aria attributes
 function initSidebarTabs() {
@@ -389,7 +440,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     }
                 }
                 if (!id) id = 'pin-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-                pins[id] = { id: id, name: name, marker: marker, hazardType: hazardType, updated_at: updated_at };
+                pins[id] = { id: id, name: name, marker: marker, hazardType: hazardType, upvotes: 0, updated_at: updated_at };
                 addPinToList(id, name, marker);
                 savePins();
                 marker.on('dblclick', function() {
@@ -699,6 +750,18 @@ function addPinToList(id, name, marker) {
     label.className = 'pin-label';
     label.textContent = hazardLabel;
     item.appendChild(label);
+
+    // Upvote button
+    var upvotes = pins[id] ? (pins[id].upvotes || 0) : 0;
+    var upvoteBtn = document.createElement('button');
+    upvoteBtn.className = 'pin-upvote';
+    upvoteBtn.setAttribute('aria-label', 'Upvote hazard');
+    upvoteBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-8 8h5v8h6v-8h5z"/></svg><span class="upvote-count">' + upvotes + '</span>';
+    upvoteBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        handleUpvote(id, upvoteBtn);
+    });
+    item.appendChild(upvoteBtn);
 
     // Lookup landmark and update marker popup (async)
     (function(marker) {

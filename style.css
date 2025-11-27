@@ -349,6 +349,67 @@ header {
     font-weight: 700;
     cursor: pointer;
     padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+/* Upvote button */
+.pin-upvote {
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    color: #666;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.pin-item:hover .pin-upvote,
+.pin-item:focus .pin-upvote {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.pin-upvote:hover {
+    background: rgba(22, 160, 133, 0.1);
+    border-color: #16a085;
+    color: #16a085;
+}
+
+.pin-upvote.upvoted {
+    background: #16a085;
+    border-color: #16a085;
+    color: white;
+    opacity: 1;
+    pointer-events: none;
+}
+
+.pin-upvote svg {
+    width: 14px;
+    height: 14px;
+}
+
+.upvote-count {
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.pin-delete {
+    background: transparent;
+    border: 1px solid #000;
+    color: #000;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 6px 10px;
     border-radius: 8px;
     font-size: 14px;
 }
@@ -495,6 +556,13 @@ footer p { margin: 0; font-size: 13px; opacity: 0.95 }
     .pin-item .hazard-icon {
         width: 28px;
         height: 28px;
+    }
+    
+    .pin-upvote {
+        opacity: 1;
+        pointer-events: auto;
+        font-size: 11px;
+        padding: 8px 10px;
     }
     
     .pin-delete { 
