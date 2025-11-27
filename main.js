@@ -243,8 +243,10 @@ function initRealtimePins() {
                     if (item) {
                         var upvoteCount = item.querySelector('.pin-upvote .upvote-count');
                         var downvoteCount = item.querySelector('.pin-downvote .downvote-count');
-                        if (upvoteCount) upvoteCount.textContent = Math.abs(row.upvotes);
-                        if (downvoteCount) downvoteCount.textContent = Math.abs(row.upvotes);
+                        var upCount = row.upvotes >= 0 ? row.upvotes : 0;
+                        var downCount = row.upvotes < 0 ? Math.abs(row.upvotes) : 0;
+                        if (upvoteCount) upvoteCount.textContent = upCount;
+                        if (downvoteCount) downvoteCount.textContent = downCount;
                     }
                 }
                 local.updated_at = incomingTime;
@@ -325,11 +327,15 @@ function handleVote(pinId, voteType, upvoteBtn, downvoteBtn) {
     // Update vote count
     pins[pinId].upvotes = newVote;
     
+    // Calculate separate counts for display
+    var upCount = newVote >= 0 ? newVote : 0;
+    var downCount = newVote < 0 ? Math.abs(newVote) : 0;
+    
     // Update button displays
     var upCountSpan = upvoteBtn.querySelector('.upvote-count');
     var downCountSpan = downvoteBtn.querySelector('.downvote-count');
-    if (upCountSpan) upCountSpan.textContent = Math.abs(newVote);
-    if (downCountSpan) downCountSpan.textContent = Math.abs(newVote);
+    if (upCountSpan) upCountSpan.textContent = upCount;
+    if (downCountSpan) downCountSpan.textContent = downCount;
     
     // Save to localStorage
     try {
@@ -785,10 +791,14 @@ function addPinToList(id, name, marker) {
         item.appendChild(icon);
     }
 
+    // Create content wrapper for label and votes
+    var contentWrapper = document.createElement('div');
+    contentWrapper.className = 'pin-content';
+    
     var label = document.createElement('span');
     label.className = 'pin-label';
     label.textContent = hazardLabel;
-    item.appendChild(label);
+    contentWrapper.appendChild(label);
 
     // Vote buttons container
     var voteContainer = document.createElement('div');
@@ -805,19 +815,28 @@ function addPinToList(id, name, marker) {
     
     var hasUpvoted = voteData.upvoted.indexOf(id) !== -1;
     var hasDownvoted = voteData.downvoted.indexOf(id) !== -1;
-    var upvotes = pins[id] ? (pins[id].upvotes || 0) : 0;
+    var upvoteCount = 0;
+    var downvoteCount = 0;
+    var totalVotes = pins[id] ? (pins[id].upvotes || 0) : 0;
+    
+    // Calculate separate counts (stored as net in DB, but we track separately in localStorage)
+    if (totalVotes >= 0) {
+        upvoteCount = totalVotes;
+    } else {
+        downvoteCount = Math.abs(totalVotes);
+    }
     
     // Upvote button
     var upvoteBtn = document.createElement('button');
     upvoteBtn.className = 'pin-upvote' + (hasUpvoted ? ' voted' : '');
     upvoteBtn.setAttribute('aria-label', 'Upvote hazard');
-    upvoteBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-8 8h5v8h6v-8h5z"/></svg><span class="upvote-count">' + Math.abs(upvotes) + '</span>';
+    upvoteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-8 8h5v8h6v-8h5z"/></svg><span class="upvote-count">' + upvoteCount + '</span>';
     
     // Downvote button
     var downvoteBtn = document.createElement('button');
     downvoteBtn.className = 'pin-downvote' + (hasDownvoted ? ' voted' : '');
     downvoteBtn.setAttribute('aria-label', 'Downvote hazard');
-    downvoteBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l8-8h-5V4H9v8H4z"/></svg><span class="downvote-count">' + Math.abs(upvotes) + '</span>';
+    downvoteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l8-8h-5V4H9v8H4z"/></svg><span class="downvote-count">' + downvoteCount + '</span>';
     
     upvoteBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
@@ -831,7 +850,9 @@ function addPinToList(id, name, marker) {
     
     voteContainer.appendChild(upvoteBtn);
     voteContainer.appendChild(downvoteBtn);
-    item.appendChild(voteContainer);
+    contentWrapper.appendChild(voteContainer);
+    
+    item.appendChild(contentWrapper);
 
     // Lookup landmark and update marker popup (async)
     (function(marker) {

@@ -313,6 +313,14 @@ header {
     border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 
+/* Pin content wrapper */
+.pin-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 /* Hazard icon in pin list */
 .pin-item .hazard-icon {
     width: 32px;
@@ -325,7 +333,6 @@ header {
 .pin-item .pin-label {
     display: block;
     flex: 1 1 auto;
-    margin-right: 12px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -358,8 +365,8 @@ header {
 /* Vote buttons container */
 .vote-buttons {
     display: flex;
-    gap: 4px;
-    flex-shrink: 0;
+    gap: 8px;
+    align-items: center;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
