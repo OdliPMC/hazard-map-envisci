@@ -101,7 +101,7 @@ function savePins() {
         var p = pins[id];
         if (p && p.marker) {
             var ll = p.marker.getLatLng();
-            arr.push({ id: id, name: p.name, lat: ll.lat, lng: ll.lng, hazardType: p.hazardType || 'other', upvotes: p.upvotes || 0 });
+            arr.push({ id: id, name: p.name, lat: ll.lat, lng: ll.lng, hazardType: p.hazardType || 'other', upvotes: p.upvotes || 0, downvotes: p.downvotes || 0 });
         }
     });
     var payload = { version: 1, pins: arr };
@@ -125,7 +125,7 @@ function loadPins() {
         var marker = L.marker([stored.lat, stored.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
         var nm = stored.name || 'Unnamed pin';
         marker.bindPopup(renderPopupContent(nm, null, { lat: stored.lat, lng: stored.lng }));
-        pins[stored.id] = { id: stored.id, name: nm, marker: marker, hazardType: hazardType, upvotes: stored.upvotes || 0 };
+        pins[stored.id] = { id: stored.id, name: nm, marker: marker, hazardType: hazardType, upvotes: stored.upvotes || 0, downvotes: stored.downvotes || 0 };
         addPinToList(stored.id, nm, marker);
         // Allow renaming again
         marker.on('dblclick', function() {
@@ -171,7 +171,7 @@ async function fetchPinsFromSupabase() {
             var marker = L.marker([row.lat, row.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
             var nm = row.name || 'Unnamed pin';
             marker.bindPopup(renderPopupContent(nm, null, { lat: row.lat, lng: row.lng }));
-            pins[row.id] = { id: row.id, name: nm, marker: marker, hazardType: hazardType, upvotes: row.upvotes || 0, updated_at: row.updated_at || row.created_at };
+            pins[row.id] = { id: row.id, name: nm, marker: marker, hazardType: hazardType, upvotes: row.upvotes || 0, downvotes: row.downvotes || 0, updated_at: row.updated_at || row.created_at };
             addPinToList(row.id, nm, marker);
             marker.on('dblclick', function() {
                 var current = pins[row.id] ? pins[row.id].name : '';
@@ -218,7 +218,7 @@ function initRealtimePins() {
             var marker = L.marker([row.lat, row.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
             var nm = row.name || 'Unnamed pin';
             marker.bindPopup(nm);
-            pins[row.id] = { id: row.id, name: nm, marker: marker, hazardType: hazardType, upvotes: row.upvotes || 0, updated_at: row.updated_at || row.created_at };
+            pins[row.id] = { id: row.id, name: nm, marker: marker, hazardType: hazardType, upvotes: row.upvotes || 0, downvotes: row.downvotes || 0, updated_at: row.updated_at || row.created_at };
             addPinToList(row.id, nm, marker);
             showToast('New pin added');
         })
@@ -236,17 +236,20 @@ function initRealtimePins() {
                     local.marker.setIcon(newIcon);
                     local.hazardType = newHazardType;
                 }
-                // Update upvotes if changed
+                // Update votes if changed
                 if (row.upvotes !== undefined && row.upvotes !== local.upvotes) {
                     local.upvotes = row.upvotes;
+                }
+                if (row.downvotes !== undefined && row.downvotes !== local.downvotes) {
+                    local.downvotes = row.downvotes;
+                }
+                if (row.upvotes !== undefined || row.downvotes !== undefined) {
                     var item = pinListContainer ? pinListContainer.querySelector('[data-pin-id="' + row.id + '"]') : null;
                     if (item) {
                         var upvoteCount = item.querySelector('.pin-upvote .upvote-count');
                         var downvoteCount = item.querySelector('.pin-downvote .downvote-count');
-                        var upCount = row.upvotes >= 0 ? row.upvotes : 0;
-                        var downCount = row.upvotes < 0 ? Math.abs(row.upvotes) : 0;
-                        if (upvoteCount) upvoteCount.textContent = upCount;
-                        if (downvoteCount) downvoteCount.textContent = downCount;
+                        if (upvoteCount) upvoteCount.textContent = local.upvotes || 0;
+                        if (downvoteCount) downvoteCount.textContent = local.downvotes || 0;
                     }
                 }
                 local.updated_at = incomingTime;
@@ -284,58 +287,57 @@ function handleVote(pinId, voteType, upvoteBtn, downvoteBtn) {
     
     var hasUpvoted = voteData.upvoted.indexOf(pinId) !== -1;
     var hasDownvoted = voteData.downvoted.indexOf(pinId) !== -1;
-    var currentVote = pins[pinId].upvotes || 0;
-    var newVote = currentVote;
+    var currentUpvotes = pins[pinId].upvotes || 0;
+    var currentDownvotes = pins[pinId].downvotes || 0;
+    var newUpvotes = currentUpvotes;
+    var newDownvotes = currentDownvotes;
     
     // Handle vote logic
     if (voteType === 'up') {
         if (hasUpvoted) {
             // Remove upvote
-            newVote--;
+            newUpvotes--;
             voteData.upvoted = voteData.upvoted.filter(function(id) { return id !== pinId; });
             upvoteBtn.classList.remove('voted');
         } else {
             // Add upvote (remove downvote if exists)
             if (hasDownvoted) {
-                newVote++;
+                newDownvotes--;
                 voteData.downvoted = voteData.downvoted.filter(function(id) { return id !== pinId; });
                 downvoteBtn.classList.remove('voted');
             }
-            newVote++;
+            newUpvotes++;
             voteData.upvoted.push(pinId);
             upvoteBtn.classList.add('voted');
         }
     } else if (voteType === 'down') {
         if (hasDownvoted) {
             // Remove downvote
-            newVote++;
+            newDownvotes--;
             voteData.downvoted = voteData.downvoted.filter(function(id) { return id !== pinId; });
             downvoteBtn.classList.remove('voted');
         } else {
             // Add downvote (remove upvote if exists)
             if (hasUpvoted) {
-                newVote--;
+                newUpvotes--;
                 voteData.upvoted = voteData.upvoted.filter(function(id) { return id !== pinId; });
                 upvoteBtn.classList.remove('voted');
             }
-            newVote--;
+            newDownvotes++;
             voteData.downvoted.push(pinId);
             downvoteBtn.classList.add('voted');
         }
     }
     
-    // Update vote count
-    pins[pinId].upvotes = newVote;
-    
-    // Calculate separate counts for display
-    var upCount = newVote >= 0 ? newVote : 0;
-    var downCount = newVote < 0 ? Math.abs(newVote) : 0;
+    // Update vote counts
+    pins[pinId].upvotes = newUpvotes;
+    pins[pinId].downvotes = newDownvotes;
     
     // Update button displays
     var upCountSpan = upvoteBtn.querySelector('.upvote-count');
     var downCountSpan = downvoteBtn.querySelector('.downvote-count');
-    if (upCountSpan) upCountSpan.textContent = upCount;
-    if (downCountSpan) downCountSpan.textContent = downCount;
+    if (upCountSpan) upCountSpan.textContent = newUpvotes;
+    if (downCountSpan) downCountSpan.textContent = newDownvotes;
     
     // Save to localStorage
     try {
@@ -346,7 +348,7 @@ function handleVote(pinId, voteType, upvoteBtn, downvoteBtn) {
     
     // Update in Supabase
     if (supabase) {
-        supabase.from('pins').update({ upvotes: newVote }).eq('id', pinId).then(function(r) {
+        supabase.from('pins').update({ upvotes: newUpvotes, downvotes: newDownvotes }).eq('id', pinId).then(function(r) {
             if (r.error) console.warn('Supabase vote update failed:', r.error);
         });
     }
@@ -815,16 +817,8 @@ function addPinToList(id, name, marker) {
     
     var hasUpvoted = voteData.upvoted.indexOf(id) !== -1;
     var hasDownvoted = voteData.downvoted.indexOf(id) !== -1;
-    var upvoteCount = 0;
-    var downvoteCount = 0;
-    var totalVotes = pins[id] ? (pins[id].upvotes || 0) : 0;
-    
-    // Calculate separate counts (stored as net in DB, but we track separately in localStorage)
-    if (totalVotes >= 0) {
-        upvoteCount = totalVotes;
-    } else {
-        downvoteCount = Math.abs(totalVotes);
-    }
+    var upvoteCount = pins[id] ? (pins[id].upvotes || 0) : 0;
+    var downvoteCount = pins[id] ? (pins[id].downvotes || 0) : 0;
     
     // Upvote button
     var upvoteBtn = document.createElement('button');
