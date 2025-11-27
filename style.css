@@ -355,13 +355,30 @@ header {
     transition: all 0.2s ease;
 }
 
-/* Upvote button */
-.pin-upvote {
+/* Vote buttons container */
+.vote-buttons {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.pin-item:hover .vote-buttons,
+.pin-item:focus .vote-buttons {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Upvote and downvote buttons */
+.pin-upvote,
+.pin-downvote {
     background: transparent;
     border: 1px solid rgba(0, 0, 0, 0.2);
     color: #666;
     cursor: pointer;
-    padding: 6px 10px;
+    padding: 6px 8px;
     border-radius: 6px;
     font-size: 12px;
     display: flex;
@@ -369,14 +386,6 @@ header {
     gap: 4px;
     flex-shrink: 0;
     transition: all 0.2s ease;
-    opacity: 0;
-    pointer-events: none;
-}
-
-.pin-item:hover .pin-upvote,
-.pin-item:focus .pin-upvote {
-    opacity: 1;
-    pointer-events: auto;
 }
 
 .pin-upvote:hover {
@@ -385,20 +394,32 @@ header {
     color: #16a085;
 }
 
-.pin-upvote.upvoted {
+.pin-downvote:hover {
+    background: rgba(231, 76, 60, 0.1);
+    border-color: #e74c3c;
+    color: #e74c3c;
+}
+
+.pin-upvote.voted {
     background: #16a085;
     border-color: #16a085;
     color: white;
-    opacity: 1;
-    pointer-events: none;
 }
 
-.pin-upvote svg {
+.pin-downvote.voted {
+    background: #e74c3c;
+    border-color: #e74c3c;
+    color: white;
+}
+
+.pin-upvote svg,
+.pin-downvote svg {
     width: 14px;
     height: 14px;
 }
 
-.upvote-count {
+.upvote-count,
+.downvote-count {
     font-weight: 600;
     font-size: 12px;
 }
@@ -558,11 +579,15 @@ footer p { margin: 0; font-size: 13px; opacity: 0.95 }
         height: 28px;
     }
     
-    .pin-upvote {
+    .vote-buttons {
         opacity: 1;
         pointer-events: auto;
+    }
+    
+    .pin-upvote,
+    .pin-downvote {
         font-size: 11px;
-        padding: 8px 10px;
+        padding: 8px;
     }
     
     .pin-delete { 
