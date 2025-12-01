@@ -92,7 +92,18 @@ body:not(.light-mode) .sidebar {
 /* Light mode sidebar - explicitly set cream */
 .light-mode .sidebar {
     background-color: #fdecea !important;
-    color: #3b0b0b;
+    color: var(--maroon);
+}
+
+.light-mode .tab-panel h3 {
+    color: var(--maroon);
+}
+
+.light-mode .tab-panel p,
+.light-mode .tab-panel ul,
+.light-mode .tab-panel li,
+.light-mode .tab-panel a {
+    color: var(--maroon-dark);
 }
 
 body:not(.light-mode) .tab-panel h3 {
