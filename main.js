@@ -597,12 +597,30 @@ function initHazardFilter() {
             var selectedType = this.value;
             var items = pinListContainer ? pinListContainer.querySelectorAll('.pin-item') : [];
             
+            // Filter list items
             items.forEach(function(item) {
                 var itemType = item.getAttribute('data-hazard-type');
                 if (selectedType === 'all' || itemType === selectedType) {
                     item.style.display = '';
                 } else {
                     item.style.display = 'none';
+                }
+            });
+            
+            // Filter map markers
+            Object.keys(pins).forEach(function(pinId) {
+                var pin = pins[pinId];
+                if (!pin || !pin.marker) return;
+                
+                var pinType = pin.hazardType || 'other';
+                if (selectedType === 'all' || pinType === selectedType) {
+                    if (!map.hasLayer(pin.marker)) {
+                        pin.marker.addTo(map);
+                    }
+                } else {
+                    if (map.hasLayer(pin.marker)) {
+                        map.removeLayer(pin.marker);
+                    }
                 }
             });
         });

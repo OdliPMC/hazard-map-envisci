@@ -120,9 +120,9 @@ body:not(.light-mode) .tab-panel label {
 }
 
 body:not(.light-mode) .tab-panel select {
-    background: #2a2a2d;
+    background: #1a1a1d;
     color: #e0e0e0;
-    border-color: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.15);
 }
 
 /* Make tab-panels fill the sidebar vertically so a panel can take over the whole left box */
