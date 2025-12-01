@@ -258,7 +258,7 @@ body:not(.light-mode) .tab-panel li {
     background: #f7f7f9;
     color: #111;
 }
-.light-mode .sidebar { background: #fff; color: #222; }
+.light-mode .sidebar { background: var(--maroon-light); color: #3b0b0b; }
 .light-mode .map-container { background: #fff; }
 .light-mode #map { background: #fafafa; }
 .light-mode .pin-list { background: #fff; border-color: rgba(0,0,0,0.06); }
