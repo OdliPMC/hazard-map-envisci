@@ -119,6 +119,30 @@ body:not(.light-mode) .tab-panel label {
     color: #c0c0c0;
 }
 
+/* Filter dropdown styles */
+.filter-label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.hazard-filter-select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    font-size: 13px;
+    background: white;
+    color: #333;
+}
+
+body:not(.light-mode) .hazard-filter-select {
+    background: #1a1a1d;
+    color: #e0e0e0;
+    border-color: rgba(255,255,255,0.15);
+}
+
 body:not(.light-mode) .tab-panel select {
     background: #1a1a1d;
     color: #e0e0e0;
