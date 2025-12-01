@@ -434,17 +434,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         maxNativeZoom: 19
     });
     
-    var darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+    var darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '© OpenStreetMap contributors © CARTO',
         maxZoom: 19,
-        maxNativeZoom: 19
-    });
-    
-    var darkLabelsLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
-        attribution: '',
-        maxZoom: 19,
         maxNativeZoom: 19,
-        pane: 'shadowPane'
+        className: 'dark-mode-tiles'
     });
     
     // Add the appropriate tile layer based on current theme
@@ -453,11 +447,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         lightTileLayer.addTo(map);
     } else {
         darkTileLayer.addTo(map);
-        darkLabelsLayer.addTo(map);
     }
     
     // Store tile layers globally so theme toggle can switch them
-    window.mapTileLayers = { light: lightTileLayer, dark: darkTileLayer, darkLabels: darkLabelsLayer };
+    window.mapTileLayers = { light: lightTileLayer, dark: darkTileLayer };
     
     map.whenReady(function() {
         setTimeout(function() {
@@ -567,12 +560,10 @@ function applyTheme(theme) {
     if (window.mapTileLayers && map) {
         if (theme === 'light') {
             map.removeLayer(window.mapTileLayers.dark);
-            map.removeLayer(window.mapTileLayers.darkLabels);
             map.addLayer(window.mapTileLayers.light);
         } else {
             map.removeLayer(window.mapTileLayers.light);
             map.addLayer(window.mapTileLayers.dark);
-            map.addLayer(window.mapTileLayers.darkLabels);
         }
     }
 }
