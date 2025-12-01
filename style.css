@@ -137,6 +137,12 @@ body:not(.light-mode) .tab-panel label {
     color: #333;
 }
 
+.light-mode .hazard-filter-select {
+    background: white !important;
+    color: var(--maroon-dark) !important;
+    border-color: rgba(0,0,0,0.2);
+}
+
 body:not(.light-mode) .hazard-filter-select {
     background: #1a1a1d;
     color: #e0e0e0;
