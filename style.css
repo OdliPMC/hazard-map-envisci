@@ -151,13 +151,40 @@ header {
     font-family: 'Bebas Neue', sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.6px;
+    color: #3b0b0b;
+    transition: all 0.2s ease;
 }
+
+.tab-button:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+/* Light mode tab buttons */
+.light-mode .tab-button {
+    background: rgba(255,255,255,0.8);
+    border-color: rgba(0,0,0,0.1);
+    color: #5a0000;
+}
+
+.light-mode .tab-button:hover {
+    background: rgba(255,255,255,0.95);
+    border-color: rgba(90,0,0,0.2);
+}
+
 .tab-button.active {
     background: var(--maroon);
     color: var(--on-maroon);
     border-color: rgba(0,0,0,0.08);
     position: relative;
 }
+
+/* Light mode active tab */
+.light-mode .tab-button.active {
+    background: linear-gradient(135deg, #c97979, #a83b3b);
+    color: white;
+    border-color: rgba(90,0,0,0.2);
+}
+
 .tab-button.active::after {
     content: '';
     position: absolute;
@@ -167,6 +194,26 @@ header {
     height: 6px;
     border-radius: 3px;
     background: linear-gradient(90deg, rgba(168,59,59,0.95), rgba(128,0,0,0.95));
+}
+
+/* Light mode tab buttons */
+.light-mode .tab-button {
+    color: #8b6b47;
+    border: 1px solid rgba(139,107,71,0.2);
+}
+
+.light-mode .tab-button:hover {
+    background: rgba(139,107,71,0.1);
+}
+
+.light-mode .tab-button.active {
+    background: #c9a56e;
+    color: #3b0b0b;
+    border-color: rgba(139,107,71,0.3);
+}
+
+.light-mode .tab-button.active::after {
+    background: linear-gradient(90deg, rgba(201,165,110,0.95), rgba(139,107,71,0.95));
 }
 
 /* Theme toggle button in header */
