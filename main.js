@@ -427,11 +427,29 @@ document.addEventListener('DOMContentLoaded', async function() {
         maxBoundsViscosity: 0.8
     });
     
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Create tile layers for light and dark modes
+    var lightTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 19,
         maxNativeZoom: 19
-    }).addTo(map);
+    });
+    
+    var darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap contributors © CARTO',
+        maxZoom: 19,
+        maxNativeZoom: 19
+    });
+    
+    // Add the appropriate tile layer based on current theme
+    var currentTheme = document.documentElement.classList.contains('light-mode') ? 'light' : 'dark';
+    if (currentTheme === 'light') {
+        lightTileLayer.addTo(map);
+    } else {
+        darkTileLayer.addTo(map);
+    }
+    
+    // Store tile layers globally so theme toggle can switch them
+    window.mapTileLayers = { light: lightTileLayer, dark: darkTileLayer };
     
     map.whenReady(function() {
         setTimeout(function() {
@@ -535,6 +553,17 @@ function applyTheme(theme) {
     if (btn) {
         btn.setAttribute('aria-pressed', theme === 'light' ? 'true' : 'false');
         btn.textContent = theme === 'light' ? '☀️' : '🌙';
+    }
+    
+    // Switch map tiles if available
+    if (window.mapTileLayers && map) {
+        if (theme === 'light') {
+            map.removeLayer(window.mapTileLayers.dark);
+            map.addLayer(window.mapTileLayers.light);
+        } else {
+            map.removeLayer(window.mapTileLayers.light);
+            map.addLayer(window.mapTileLayers.dark);
+        }
     }
 }
 
