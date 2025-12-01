@@ -89,6 +89,12 @@ body:not(.light-mode) .sidebar {
     color: #e0e0e0;
 }
 
+/* Light mode sidebar - explicitly set cream */
+.light-mode .sidebar {
+    background-color: #fdecea !important;
+    color: #3b0b0b;
+}
+
 body:not(.light-mode) .tab-panel h3 {
     color: #e0e0e0;
 }
@@ -258,7 +264,6 @@ body:not(.light-mode) .tab-panel li {
     background: #f7f7f9;
     color: #111;
 }
-.light-mode .sidebar { background: var(--maroon-light); color: #3b0b0b; }
 .light-mode .map-container { background: #fff; }
 .light-mode #map { background: #fafafa; }
 .light-mode .pin-list { background: #fff; border-color: rgba(0,0,0,0.06); }
