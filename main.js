@@ -467,6 +467,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     initSidebarTabs(); 
     initThemeToggle();
     initNameDialog();
+    initHazardFilter();
     // Fetch shared pins first; fallback to local cache.
     fetchPinsFromSupabase().then(function(){ initRealtimePins(); });
     
@@ -582,6 +583,28 @@ function initThemeToggle() {
             var next = isLight ? 'dark' : 'light';
             applyTheme(next);
             try { localStorage.setItem('hazardmap-theme', next); } catch (e) {}
+        });
+    } catch (e) { /* ignore */ }
+}
+
+// Initialize hazard filter dropdown
+function initHazardFilter() {
+    try {
+        var filterSelect = document.getElementById('hazard-filter');
+        if (!filterSelect) return;
+        
+        filterSelect.addEventListener('change', function() {
+            var selectedType = this.value;
+            var items = pinListContainer ? pinListContainer.querySelectorAll('.pin-item') : [];
+            
+            items.forEach(function(item) {
+                var itemType = item.getAttribute('data-hazard-type');
+                if (selectedType === 'all' || itemType === selectedType) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
         });
     } catch (e) { /* ignore */ }
 }
@@ -765,6 +788,10 @@ function addPinToList(id, name, marker) {
     item.setAttribute('data-pin-id', id);
     // make the item focusable for keyboard users so hover-style reveal also works with focus
     item.setAttribute('tabindex', '0');
+    
+    // Store hazard type on the item for filtering
+    var hazardType = pins[id] ? pins[id].hazardType : 'other';
+    item.setAttribute('data-hazard-type', hazardType);
 
     // delete button (placed on the left)
     var del = document.createElement('button');

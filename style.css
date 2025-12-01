@@ -102,7 +102,9 @@ body:not(.light-mode) .sidebar {
 .light-mode .tab-panel p,
 .light-mode .tab-panel ul,
 .light-mode .tab-panel li,
-.light-mode .tab-panel a {
+.light-mode .tab-panel a,
+.light-mode .tab-panel select,
+.light-mode .tab-panel label {
     color: var(--maroon-dark) !important;
 }
 
@@ -112,8 +114,15 @@ body:not(.light-mode) .tab-panel h3 {
 
 body:not(.light-mode) .tab-panel p,
 body:not(.light-mode) .tab-panel ul,
-body:not(.light-mode) .tab-panel li {
+body:not(.light-mode) .tab-panel li,
+body:not(.light-mode) .tab-panel label {
     color: #c0c0c0;
+}
+
+body:not(.light-mode) .tab-panel select {
+    background: #2a2a2d;
+    color: #e0e0e0;
+    border-color: rgba(255,255,255,0.2);
 }
 
 /* Make tab-panels fill the sidebar vertically so a panel can take over the whole left box */

@@ -99,6 +99,21 @@
 
                 <div id="tab-hazards" class="tab-panel hazard-panel" role="tabpanel" aria-labelledby="tab-btn-hazards" hidden>
                     <h3>Hazard List</h3>
+                    <div style="margin-bottom: 12px;">
+                        <label for="hazard-filter" style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 13px;">Filter by type:</label>
+                        <select id="hazard-filter" style="width: 100%; padding: 6px 8px; border: 1px solid rgba(0,0,0,0.2); border-radius: 4px; font-size: 13px; background: white;">
+                            <option value="all">All Hazards</option>
+                            <option value="theft">Theft</option>
+                            <option value="flooding">Flooding</option>
+                            <option value="slippery">Slippery Surface</option>
+                            <option value="pets">Stray Pets</option>
+                            <option value="wild-animals">Wild Animals</option>
+                            <option value="construction">Construction Zone</option>
+                            <option value="no-lights">No Lights</option>
+                            <option value="slopes">Steep Slope</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
                     <div class="hazard-list" id="hazard-list">
                         <!-- hazard items will be shown here -->
                         <p class="muted">No hazards listed yet.</p>
