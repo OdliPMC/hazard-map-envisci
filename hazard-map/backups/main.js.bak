@@ -1,3 +1,8 @@
+// Supabase configuration (ESM import via esm.sh for GitHub Pages)
+var SUPABASE_URL = 'https://oggnnptinplbdmkhkaqh.supabase.co';
+var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nZ25ucHRpbnBsYmRta2hrYXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMTg0MDYsImV4cCI6MjA3OTY5NDQwNn0.0X6PJMoEP6YvU_4g3qn6glHU1Qiuq507gFq79TnyQPQ';
+var supabase = null;
+
 // Define the bounds of UP Diliman (approximate)
 var bounds = [
     [14.645541284855522, 121.05357969734676], // southwest corner
@@ -7,43 +12,347 @@ var bounds = [
 // Default center for the map (UP Diliman)
 var defaultCenter = [14.6556, 121.0733];
 
-// Create map centered on UP Diliman with restricted zoom and bounds
-var map = L.map('map', {
-    center: defaultCenter, // center coordinates
-    zoom: 16,               // starting zoom
-    minZoom: 15,            // can't zoom out too far
-    maxZoom: 19,            // can't zoom in too close (match tile availability)
-    maxBounds: bounds,      // restrict map panning
-    maxBoundsViscosity: 0.8 // controls how "sticky" the edges are             
-});
+// Map reference (will be initialized after DOM loads)
+var map = null;
 
-// Add OpenStreetMap tiles
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
-    maxZoom: 19,
-    maxNativeZoom: 19
-}).addTo(map);
-
-// Ensure the map is correctly sized and centered when ready (fixes any layout/centering issues)
-map.whenReady(function() {
-    // Tell Leaflet to recalculate sizes (useful if the map was initialized hidden or container size changed)
-    setTimeout(function() {
-        try { map.invalidateSize(); } catch (e) {}
-        try { map.setView(defaultCenter, map.getZoom()); } catch (e) {}
-    }, 50);
-});
-
-// Keep the map centered on window resize so it appears centered visually
-window.addEventListener('resize', function() {
-    try { map.invalidateSize(); } catch (e) {}
-    try { map.setView(defaultCenter, map.getZoom()); } catch (e) {}
-});
-
-// Keep track of pins (id -> { id, name, marker })
+// Keep track of pins (id -> { id, name, marker, hazardType })
 var pins = {};
 
-// Reference to the hazard list container (left sidebar). We'll add pins here.
-var pinListContainer = document.getElementById('hazard-list');
+// Hazard type colors for markers
+var hazardColors = {
+    'other': '#808080',        // Gray
+    'theft': '#e74c3c',        // Red
+    'flooding': '#3498db',     // Blue
+    'slippery': '#9b59b6',     // Purple
+    'pets': '#f39c12',         // Orange
+    'wild-animals': '#e67e22', // Dark Orange
+    'construction': '#f1c40f', // Yellow
+    'no-lights': '#34495e',    // Dark Gray
+    'slopes': '#16a085'        // Teal
+};
+
+// Hazard type to icon mapping
+var hazardTypeIcons = {
+    'theft': 'hazards-icons/Theft.png',
+    'flooding': 'hazards-icons/Flooding.png',
+    'slippery': 'hazards-icons/Slippery.png',
+    'pets': 'hazards-icons/Stray-Pets.png',
+    'wild-animals': 'hazards-icons/Wild-Animals.png',
+    'construction': 'hazards-icons/Construction.png',
+    'no-lights': 'hazards-icons/No-lights.png',
+    'slopes': 'hazards-icons/Slope.png',
+    'other': null
+};
+
+// Create a custom marker icon based on hazard type
+function createHazardIcon(hazardType) {
+    var iconUrl = hazardTypeIcons[hazardType];
+    
+    if (iconUrl) {
+        // Use the actual hazard icon
+        return L.icon({
+            iconUrl: iconUrl,
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+    } else {
+        // Fallback to gray teardrop for 'other' or unknown types
+        return L.divIcon({
+            className: 'custom-marker',
+            html: '<div style="background-color: #808080; width: 25px; height: 25px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
+            iconSize: [25, 25],
+            iconAnchor: [12, 24],
+            popupAnchor: [0, -24]
+        });
+    }
+}
+
+// Show quick toast notifications
+function showToast(msg) {
+    var t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.hidden = false;
+    setTimeout(function(){ t.hidden = true; }, 2000);
+}
+// Build rich HTML for marker popup
+function renderPopupContent(name, landmarkText, latlng) {
+    var coords = latlng ? (Math.round(latlng.lat * 10000) / 10000 + ", " + Math.round(latlng.lng * 10000) / 10000) : '';
+    var lm = landmarkText ? ('<div class="popup-sub">' + landmarkText + '</div>') : '';
+    var ts = new Date().toLocaleString();
+    return (
+        '<div class="popup-card">' +
+            '<div class="popup-title">' + (name || 'Unnamed pin') + '</div>' +
+            lm +
+            (coords ? '<div class="popup-meta">' + coords + '</div>' : '') +
+            '<div class="popup-time">Updated ' + ts + '</div>' +
+        '</div>'
+    );
+}
+
+// LocalStorage key for persistence
+var PINS_STORE_KEY = 'hazardmap-pins-v2';
+
+// Persist current pins (id, name, lat, lng, hazardType, upvotes)
+function savePins() {
+    var arr = [];
+    Object.keys(pins).forEach(function(id) {
+        var p = pins[id];
+        if (p && p.marker) {
+            var ll = p.marker.getLatLng();
+            arr.push({ id: id, name: p.name, lat: ll.lat, lng: ll.lng, hazardType: p.hazardType || 'other', upvotes: p.upvotes || 0, downvotes: p.downvotes || 0 });
+        }
+    });
+    var payload = { version: 1, pins: arr };
+    try { localStorage.setItem(PINS_STORE_KEY, JSON.stringify(payload)); } catch (e) {}
+}
+
+// Restore pins from storage (re-run landmark lookup for fresh data)
+function loadPins() {
+    var raw = null;
+    try { raw = localStorage.getItem(PINS_STORE_KEY); } catch (e) { raw = null; }
+    if (!raw) return;
+    var data = null;
+    try { data = JSON.parse(raw); } catch (e) { data = null; }
+    if (!data || !data.pins || !Array.isArray(data.pins)) return;
+    data.pins.forEach(function(stored) {
+        if (!stored || !stored.id || typeof stored.lat !== 'number' || typeof stored.lng !== 'number') return;
+        // Avoid recreating if somehow already present
+        if (pins[stored.id]) return;
+        var hazardType = stored.hazardType || 'other';
+        var icon = createHazardIcon(hazardType);
+        var marker = L.marker([stored.lat, stored.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
+        var nm = stored.name || 'Unnamed pin';
+        marker.bindPopup(renderPopupContent(nm, null, { lat: stored.lat, lng: stored.lng }));
+        pins[stored.id] = { id: stored.id, name: nm, marker: marker, hazardType: hazardType, upvotes: stored.upvotes || 0, downvotes: stored.downvotes || 0 };
+        addPinToList(stored.id, nm, marker);
+        // Allow renaming again
+        marker.on('dblclick', function() {
+            var current = pins[stored.id] ? pins[stored.id].name : '';
+            openNameDialog(current, function(result) {
+                if (!result) return;
+                var newName = (result.name || '').trim();
+                var newHazardType = result.hazardType || pins[stored.id].hazardType || 'other';
+                if (newName === '') return;
+                
+                if (newHazardType !== pins[stored.id].hazardType) {
+                    var newIcon = createHazardIcon(newHazardType);
+                    marker.setIcon(newIcon);
+                    pins[stored.id].hazardType = newHazardType;
+                }
+                
+                marker.bindPopup(renderPopupContent(newName, null, marker.getLatLng())).openPopup();
+                pins[stored.id].name = newName;
+                updatePinNameInList(stored.id, newName);
+                savePins();
+                if (supabase) {
+                    var nowISO = new Date().toISOString();
+                    pins[stored.id].updated_at = nowISO;
+                    supabase.from('pins').update({ name: newName, hazard_type: newHazardType, updated_at: nowISO }).eq('id', stored.id).then(function(r){ if(r.error) console.warn('Supabase update failed:', r.error); });
+                }
+            });
+        });
+    });
+}
+
+// Fetch shared pins from Supabase then cache locally; fallback to local if unavailable
+async function fetchPinsFromSupabase() {
+    if (!supabase) { loadPins(); return; }
+    try {
+        var result = await supabase.from('pins').select('*').order('created_at');
+        if (result.error) { console.warn('Supabase fetch error; fallback to local:', result.error); loadPins(); return; }
+        var rows = result.data || [];
+        rows.forEach(function(row) {
+            if (!row || !row.id || typeof row.lat !== 'number' || typeof row.lng !== 'number') return;
+            if (pins[row.id]) return;
+            var hazardType = row.hazard_type || 'other';
+            var icon = createHazardIcon(hazardType);
+            var marker = L.marker([row.lat, row.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
+            var nm = row.name || 'Unnamed pin';
+            marker.bindPopup(renderPopupContent(nm, null, { lat: row.lat, lng: row.lng }));
+            pins[row.id] = { id: row.id, name: nm, marker: marker, hazardType: hazardType, upvotes: row.upvotes || 0, downvotes: row.downvotes || 0, updated_at: row.updated_at || row.created_at };
+            addPinToList(row.id, nm, marker);
+            marker.on('dblclick', function() {
+                var current = pins[row.id] ? pins[row.id].name : '';
+                openNameDialog(current, function(result) {
+                    if (!result) return;
+                    var newName = (result.name || '').trim();
+                    var newHazardType = result.hazardType || pins[row.id].hazardType || 'other';
+                    if (newName === '') return;
+                    
+                    if (newHazardType !== pins[row.id].hazardType) {
+                        var newIcon = createHazardIcon(newHazardType);
+                        marker.setIcon(newIcon);
+                        pins[row.id].hazardType = newHazardType;
+                    }
+                    
+                    marker.bindPopup(renderPopupContent(newName, null, marker.getLatLng())).openPopup();
+                    pins[row.id].name = newName;
+                    updatePinNameInList(row.id, newName);
+                    savePins();
+                    if (supabase) {
+                        var nowISO = new Date().toISOString();
+                        pins[row.id].updated_at = nowISO;
+                        supabase.from('pins').update({ name: newName, hazard_type: newHazardType, updated_at: nowISO }).eq('id', row.id).then(function(r){ if(r.error) console.warn('Supabase rename failed:', r.error); });
+                    }
+                });
+            });
+        });
+        savePins();
+    } catch (e) {
+        console.warn('Supabase fetch exception:', e);
+        loadPins();
+    }
+}
+
+// Realtime subscription to reflect other users' changes
+function initRealtimePins() {
+    if (!supabase) return;
+    supabase.channel('public:pins')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pins' }, function(payload) {
+            var row = payload.new;
+            if (!row || pins[row.id]) return;
+            var hazardType = row.hazard_type || 'other';
+            var icon = createHazardIcon(hazardType);
+            var marker = L.marker([row.lat, row.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
+            var nm = row.name || 'Unnamed pin';
+            marker.bindPopup(nm);
+            pins[row.id] = { id: row.id, name: nm, marker: marker, hazardType: hazardType, upvotes: row.upvotes || 0, downvotes: row.downvotes || 0, updated_at: row.updated_at || row.created_at };
+            addPinToList(row.id, nm, marker);
+            showToast('New pin added');
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pins' }, function(payload) {
+            var row = payload.new;
+            if (!row || !pins[row.id]) return;
+            var local = pins[row.id];
+            var incomingTime = row.updated_at || row.created_at;
+            // Conflict handling: apply only if newer than local
+            if (!local.updated_at || (incomingTime && new Date(incomingTime) > new Date(local.updated_at))) {
+                local.name = row.name || 'Unnamed pin';
+                var newHazardType = row.hazard_type || 'other';
+                if (newHazardType !== local.hazardType) {
+                    var newIcon = createHazardIcon(newHazardType);
+                    local.marker.setIcon(newIcon);
+                    local.hazardType = newHazardType;
+                }
+                // Update votes if changed
+                if (row.upvotes !== undefined && row.upvotes !== local.upvotes) {
+                    local.upvotes = row.upvotes;
+                }
+                if (row.downvotes !== undefined && row.downvotes !== local.downvotes) {
+                    local.downvotes = row.downvotes;
+                }
+                if (row.upvotes !== undefined || row.downvotes !== undefined) {
+                    var item = pinListContainer ? pinListContainer.querySelector('[data-pin-id="' + row.id + '"]') : null;
+                    if (item) {
+                        var upvoteCount = item.querySelector('.pin-upvote .upvote-count');
+                        var downvoteCount = item.querySelector('.pin-downvote .downvote-count');
+                        if (upvoteCount) upvoteCount.textContent = local.upvotes || 0;
+                        if (downvoteCount) downvoteCount.textContent = local.downvotes || 0;
+                    }
+                }
+                local.updated_at = incomingTime;
+                updatePinNameInList(row.id, local.name);
+                showToast('Pin updated');
+            }
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'pins' }, function(payload) {
+            var id = payload.old.id;
+            var p = pins[id];
+            if (!p) return;
+            try { p.marker.remove(); } catch (e) {}
+            delete pins[id];
+            var item = pinListContainer ? pinListContainer.querySelector('[data-pin-id="' + id + '"]') : null;
+            if (item && item.parentNode) item.parentNode.removeChild(item);
+            savePins();
+        });
+}
+
+// Reference to the hazard list container (left sidebar). Will be set after DOM loads.
+var pinListContainer = null;
+
+// Handle vote functionality (upvote/downvote/remove)
+function handleVote(pinId, voteType, upvoteBtn, downvoteBtn) {
+    if (!pins[pinId]) return;
+    
+    // Get user's vote history
+    var voteData = { upvoted: [], downvoted: [] };
+    try {
+        var stored = localStorage.getItem('hazardmap-votes');
+        if (stored) voteData = JSON.parse(stored);
+        if (!voteData.upvoted) voteData.upvoted = [];
+        if (!voteData.downvoted) voteData.downvoted = [];
+    } catch (e) {}
+    
+    var hasUpvoted = voteData.upvoted.indexOf(pinId) !== -1;
+    var hasDownvoted = voteData.downvoted.indexOf(pinId) !== -1;
+    var currentUpvotes = pins[pinId].upvotes || 0;
+    var currentDownvotes = pins[pinId].downvotes || 0;
+    var newUpvotes = currentUpvotes;
+    var newDownvotes = currentDownvotes;
+    
+    // Handle vote logic
+    if (voteType === 'up') {
+        if (hasUpvoted) {
+            // Remove upvote
+            newUpvotes--;
+            voteData.upvoted = voteData.upvoted.filter(function(id) { return id !== pinId; });
+            upvoteBtn.classList.remove('voted');
+        } else {
+            // Add upvote (remove downvote if exists)
+            if (hasDownvoted) {
+                newDownvotes--;
+                voteData.downvoted = voteData.downvoted.filter(function(id) { return id !== pinId; });
+                downvoteBtn.classList.remove('voted');
+            }
+            newUpvotes++;
+            voteData.upvoted.push(pinId);
+            upvoteBtn.classList.add('voted');
+        }
+    } else if (voteType === 'down') {
+        if (hasDownvoted) {
+            // Remove downvote
+            newDownvotes--;
+            voteData.downvoted = voteData.downvoted.filter(function(id) { return id !== pinId; });
+            downvoteBtn.classList.remove('voted');
+        } else {
+            // Add downvote (remove upvote if exists)
+            if (hasUpvoted) {
+                newUpvotes--;
+                voteData.upvoted = voteData.upvoted.filter(function(id) { return id !== pinId; });
+                upvoteBtn.classList.remove('voted');
+            }
+            newDownvotes++;
+            voteData.downvoted.push(pinId);
+            downvoteBtn.classList.add('voted');
+        }
+    }
+    
+    // Update vote counts
+    pins[pinId].upvotes = newUpvotes;
+    pins[pinId].downvotes = newDownvotes;
+    
+    // Update button displays
+    var upCountSpan = upvoteBtn.querySelector('.upvote-count');
+    var downCountSpan = downvoteBtn.querySelector('.downvote-count');
+    if (upCountSpan) upCountSpan.textContent = newUpvotes;
+    if (downCountSpan) downCountSpan.textContent = newDownvotes;
+    
+    // Save to localStorage
+    try {
+        localStorage.setItem('hazardmap-votes', JSON.stringify(voteData));
+    } catch (e) {}
+    
+    savePins();
+    
+    // Update in Supabase
+    if (supabase) {
+        supabase.from('pins').update({ upvotes: newUpvotes, downvotes: newDownvotes }).eq('id', pinId).then(function(r) {
+            if (r.error) console.warn('Supabase vote update failed:', r.error);
+        });
+    }
+}
 
 // Sidebar tab behavior: switch visible tab panel and update aria attributes
 function initSidebarTabs() {
@@ -80,9 +389,158 @@ function initSidebarTabs() {
 }
 
 // initialize sidebar tabs and theme toggle on load
-document.addEventListener('DOMContentLoaded', function() { 
+document.addEventListener('DOMContentLoaded', async function() {
+    // Wait for Leaflet to be available
+    if (typeof L === 'undefined') {
+        console.error('Leaflet not loaded');
+        return;
+    }
+
+    // Initialize Supabase via ESM import (works on GitHub Pages)
+    try {
+        const mod = await import('https://esm.sh/@supabase/supabase-js@2.45.4?target=es2022');
+        if (mod && mod.createClient) {
+            supabase = mod.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+            var st = document.getElementById('conn-status');
+            if (st) st.textContent = 'Connected to Supabase';
+        } else {
+            console.warn('Supabase module missing createClient; using local-only pins');
+            var st2 = document.getElementById('conn-status');
+            if (st2) st2.textContent = 'Local-only mode';
+        }
+    } catch (e) {
+        console.warn('Supabase ESM import failed; using local-only pins:', e);
+        var st3 = document.getElementById('conn-status');
+        if (st3) st3.textContent = 'Local-only mode';
+    }
+    
+    // Set DOM reference after elements are ready
+    pinListContainer = document.getElementById('hazard-list');
+    
+    // Initialize map
+    map = L.map('map', {
+        center: defaultCenter,
+        zoom: 16,
+        minZoom: 15,
+        maxZoom: 19,
+        maxBounds: bounds,
+        maxBoundsViscosity: 0.8
+    });
+    
+    // Create tile layers for light and dark modes
+    var lightTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19,
+        maxNativeZoom: 19
+    });
+    
+    var darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap contributors © CARTO',
+        maxZoom: 19,
+        maxNativeZoom: 19,
+        className: 'dark-mode-tiles'
+    });
+    
+    // Add the appropriate tile layer based on current theme
+    var currentTheme = document.documentElement.classList.contains('light-mode') ? 'light' : 'dark';
+    if (currentTheme === 'light') {
+        lightTileLayer.addTo(map);
+    } else {
+        darkTileLayer.addTo(map);
+    }
+    
+    // Store tile layers globally so theme toggle can switch them
+    window.mapTileLayers = { light: lightTileLayer, dark: darkTileLayer };
+    
+    map.whenReady(function() {
+        setTimeout(function() {
+            try { map.invalidateSize(); } catch (e) {}
+            try { map.setView(defaultCenter, map.getZoom()); } catch (e) {}
+        }, 50);
+    });
+    
+    window.addEventListener('resize', function() {
+        try { map.invalidateSize(); } catch (e) {}
+        try { map.setView(defaultCenter, map.getZoom()); } catch (e) {}
+    });
+    
     initSidebarTabs(); 
     initThemeToggle();
+    initNameDialog();
+    // Fetch shared pins first; fallback to local cache.
+    fetchPinsFromSupabase().then(function(){ initRealtimePins(); });
+    
+    // Add pin on map click (must be after map is initialized)
+    map.on('click', function(e) {
+        // Make sure pins stay within bounds
+        if (
+            e.latlng.lat >= bounds[0][0] && e.latlng.lat <= bounds[1][0] &&
+            e.latlng.lng >= bounds[0][1] && e.latlng.lng <= bounds[1][1]
+        ) {
+            // Open name dialog; continue after user confirms
+            openNameDialog('', async function(result) {
+                if (!result) return;
+                var name = (result.name || '').trim();
+                var hazardType = result.hazardType || 'other';
+                if (name === '') return; // Don't save empty pins
+                
+                var icon = createHazardIcon(hazardType);
+                var marker = L.marker([e.latlng.lat, e.latlng.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
+                marker.bindPopup(renderPopupContent(name, null, e.latlng)).openPopup();
+
+            // Attempt remote insert; fallback local id if unavailable
+            (async function createAndRegister(){
+                var id = null;
+                var updated_at = null;
+                if (supabase) {
+                    try {
+                        var ins = await supabase.from('pins').insert({ name: name, lat: e.latlng.lat, lng: e.latlng.lng, hazard_type: hazardType }).select();
+                        if (!ins.error && ins.data && ins.data.length > 0) {
+                            id = ins.data[0].id;
+                            updated_at = ins.data[0].updated_at || ins.data[0].created_at;
+                        } else if (ins.error) {
+                            console.warn('Supabase insert failed, using local id:', ins.error);
+                        }
+                    } catch (err) {
+                        console.warn('Supabase insert exception, using local id:', err);
+                    }
+                }
+                if (!id) id = 'pin-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+                pins[id] = { id: id, name: name, marker: marker, hazardType: hazardType, upvotes: 0, updated_at: updated_at };
+                addPinToList(id, name, marker);
+                savePins();
+                marker.on('dblclick', function() {
+                    var current = pins[id] ? pins[id].name : '';
+                    openNameDialog(current, function(result) {
+                        if (!result) return;
+                        var newName = (result.name || '').trim();
+                        var newHazardType = result.hazardType || pins[id].hazardType || 'other';
+                        if (newName === '') return; // Don't save empty names
+                        
+                        // Update marker icon if hazard type changed
+                        if (newHazardType !== pins[id].hazardType) {
+                            var newIcon = createHazardIcon(newHazardType);
+                            marker.setIcon(newIcon);
+                            pins[id].hazardType = newHazardType;
+                        }
+                        
+                        marker.bindPopup(renderPopupContent(newName, null, marker.getLatLng())).openPopup();
+                        pins[id].name = newName;
+                        updatePinNameInList(id, newName);
+                        savePins();
+                        if (supabase) {
+                            var nowISO = new Date().toISOString();
+                            pins[id].updated_at = nowISO;
+                            supabase.from('pins').update({ name: newName, hazard_type: newHazardType, updated_at: nowISO }).eq('id', id).then(function(r){ if(r.error) console.warn('Supabase rename failed:', r.error); });
+                        }
+                    });
+                });
+            })();
+            });
+        } else {
+            alert("You can't place a pin outside UP Diliman!");
+        }
+    });
 });
 
 // Theme toggle: persists user's choice in localStorage and updates UI
@@ -96,6 +554,17 @@ function applyTheme(theme) {
     if (btn) {
         btn.setAttribute('aria-pressed', theme === 'light' ? 'true' : 'false');
         btn.textContent = theme === 'light' ? '☀️' : '🌙';
+    }
+    
+    // Switch map tiles if available
+    if (window.mapTileLayers && map) {
+        if (theme === 'light') {
+            map.removeLayer(window.mapTileLayers.dark);
+            map.addLayer(window.mapTileLayers.light);
+        } else {
+            map.removeLayer(window.mapTileLayers.light);
+            map.addLayer(window.mapTileLayers.dark);
+        }
     }
 }
 
@@ -137,8 +606,9 @@ function getBuildingAndPOI(latlng, radiusMeters) {
     }
 
     // Query for buildings and named features in parallel to reduce total time
-    var qBuilding = '[out:json][timeout:15];(node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["building"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["building"];relation(around:' + radiusMeters + ',' + lat + ',' + lon + ')["building"];);out center tags;';
-    var qNamed = '[out:json][timeout:15];(node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["name"];relation(around:' + radiusMeters + ',' + lat + ',' + lon + ')["name"];);out center tags;';
+    var qBuilding = '[out:json][timeout:15];(node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["building"]["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["building"]["name"];relation(around:' + radiusMeters + ',' + lat + ',' + lon + ')["building"]["name"];);out center tags;';
+    // Only query for named POIs with useful tags (amenity, tourism, shop, leisure, historic, office)
+    var qNamed = '[out:json][timeout:15];(node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["amenity"]["name"];node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["tourism"]["name"];node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["shop"]["name"];node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["leisure"]["name"];node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["historic"]["name"];node(around:' + radiusMeters + ',' + lat + ',' + lon + ')["office"]["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["amenity"]["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["tourism"]["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["shop"]["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["leisure"]["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["historic"]["name"];way(around:' + radiusMeters + ',' + lat + ',' + lon + ')["office"]["name"];);out center tags;';
 
     return Promise.all([fetchOverpass(qBuilding), fetchOverpass(qNamed)]).then(function(results) {
         var jsonB = results[0];
@@ -224,17 +694,29 @@ function getBuildingAndPOI(latlng, radiusMeters) {
                     } catch (e) {}
                     var d = latlng.distanceTo(L.latLng(elLat, elLon));
                     if (d < minDistN) {
-                        // only include named elements
+                        // only include named elements with proper tags
                         if (el.tags && el.tags.name) {
+                            // Additional safety: skip if it's a highway/street
+                            if (el.tags.highway) return;
+                            if (el.tags.place && !el.tags.amenity && !el.tags.tourism && !el.tags.shop && !el.tags.leisure) return;
+                            
+                            var typeLabel = getTypeFromTags(el.tags, false) || 'Place';
                             minDistN = d;
                             var displayName = el.tags.name;
-                            var typeLabel = getTypeFromTags(el.tags, false) || 'Place';
                             nearestN = { name: displayName, dist: d, type: typeLabel };
                         }
                     }
                 }
             });
             if (nearestN) out.poi = nearestN;
+        }
+
+        // Prioritize building over POI if both exist and building is closer or POI is generic
+        if (out.building && out.poi) {
+            // If building is significantly closer (within 50m more) or POI type is too generic, use only building
+            if (out.building.dist < out.poi.dist + 50 || out.poi.type === 'Place') {
+                out.poi = null;
+            }
         }
 
         // If both are null, try Nominatim for a fallback name (address/display)
@@ -284,71 +766,148 @@ function addPinToList(id, name, marker) {
     // make the item focusable for keyboard users so hover-style reveal also works with focus
     item.setAttribute('tabindex', '0');
 
-    var label = document.createElement('span');
-    label.className = 'pin-label';
-    label.textContent = name;
-    // ensure label is readable inside the hazard list (force black)
-    label.style.color = '#000';
-    item.appendChild(label);
-
-    // find nearest landmark to this marker using Overpass (async)
-    var landmarkSpan = document.createElement('span');
-    landmarkSpan.className = 'pin-landmark';
-    landmarkSpan.textContent = 'Searching...';
-    landmarkSpan.style.color = '#333';
-    // do the async lookup and update the UI when ready
-    (function(marker, landmarkSpan) {
-        var latlng = marker.getLatLng();
-        getBuildingAndPOI(latlng, 400).then(function(res) {
-            if (!res) {
-                landmarkSpan.textContent = 'No landmark';
-                return;
-            }
-            var parts = [];
-            if (res.building && res.building.name) {
-                parts.push((res.building.type || 'Building') + ': ' + res.building.name + ' (' + Math.round(res.building.dist) + ' m)');
-            }
-            if (res.poi && res.poi.name) {
-                // avoid duplicating same label
-                var poiLabel = res.poi.name;
-                if (!res.building || (res.building.name !== poiLabel)) {
-                    parts.push('Nearest: ' + (res.poi.type || 'Place') + ': ' + poiLabel + ' (' + Math.round(res.poi.dist) + ' m)');
-                }
-            }
-            if (parts.length === 0) {
-                landmarkSpan.textContent = 'No nearby named landmark';
-            } else {
-                landmarkSpan.textContent = parts.join(' • ');
-            }
-        }).catch(function() {
-            landmarkSpan.textContent = 'No landmark';
-        });
-    })(marker, landmarkSpan);
-    // container for right-side controls (landmark + delete)
-    var controls = document.createElement('div');
-    controls.style.display = 'inline-flex';
-    controls.style.alignItems = 'center';
-    controls.appendChild(landmarkSpan);
-
-    // delete button
+    // delete button (placed on the left)
     var del = document.createElement('button');
     del.className = 'pin-delete';
     del.setAttribute('aria-label', 'Delete pin ' + name);
-    del.textContent = '✕';
-    // stop click from bubbling to the item click
+    del.innerHTML = '<svg class="icon-trash" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6a1 1 0 0 1 1 1v2h4a1 1 0 1 1 0 2h-1.05l-1.02 12.24A3 3 0 0 1 15.94 23H8.06a3 3 0 0 1-2.99-2.76L4.05 8H3a1 1 0 1 1 0-2h4V4a1 1 0 0 1 1-1Zm1 3h4V5h-4v1ZM6.06 8l.97 11.64A1 1 0 0 0 8.06 21h7.88a1 1 0 0 0 1.03-.96L18.94 8H6.06ZM10 10a1 1 0 0 1 1 1v7a1 1 0 1 1-2 0v-7a1 1 0 0 1 1-1Zm4 0a1 1 0 0 1 1 1v7a1 1 0 1 1-2 0v-7a1 1 0 0 1 1-1Z"/></svg>';
+    del.style.marginRight = '8px';
     del.addEventListener('click', function(ev) {
         ev.stopPropagation();
-        var doDelete = confirm('Delete pin "' + name + '"?');
-        if (!doDelete) return;
-        // remove marker from map and from pins object
-        try { marker.remove(); } catch (e) { if (map.hasLayer(marker)) map.removeLayer(marker); }
-        delete pins[id];
-        // remove the list item
-        if (item.parentNode) item.parentNode.removeChild(item);
+        openDeleteDialog(function(confirmed){
+            if (!confirmed) return;
+            try { marker.remove(); } catch (e) { if (map.hasLayer(marker)) map.removeLayer(marker); }
+            delete pins[id];
+            if (item.parentNode) item.parentNode.removeChild(item);
+            savePins();
+            if (supabase) {
+                supabase.from('pins').delete().eq('id', id).then(function(r){ if(r.error) console.warn('Supabase delete failed:', r.error); });
+            }
+        });
     });
-    controls.appendChild(del);
+    item.appendChild(del);
 
-    item.appendChild(controls);
+    // Get hazard type label
+    var hazardType = pins[id] ? pins[id].hazardType : 'other';
+    var hazardTypeLabels = {
+        'theft': 'Theft',
+        'flooding': 'Flooding',
+        'slippery': 'Slippery when wet',
+        'pets': 'Community pets',
+        'wild-animals': 'Wild animals',
+        'construction': 'Construction on-going',
+        'no-lights': 'No lights at night',
+        'slopes': 'Slopes',
+        'other': 'Other / General'
+    };
+    var hazardTypeIcons = {
+        'theft': 'hazards-icons/Theft.png',
+        'flooding': 'hazards-icons/Flooding.png',
+        'slippery': 'hazards-icons/Slippery.png',
+        'pets': 'hazards-icons/Stray-Pets.png',
+        'wild-animals': 'hazards-icons/Wild-Animals.png',
+        'construction': 'hazards-icons/Construction.png',
+        'no-lights': 'hazards-icons/No-lights.png',
+        'slopes': 'hazards-icons/Slope.png',
+        'other': null
+    };
+    var hazardLabel = hazardTypeLabels[hazardType] || 'Other / General';
+    var hazardIcon = hazardTypeIcons[hazardType];
+
+    // Add icon if available
+    if (hazardIcon) {
+        var icon = document.createElement('img');
+        icon.src = hazardIcon;
+        icon.alt = '';
+        icon.className = 'hazard-icon';
+        item.appendChild(icon);
+    }
+
+    // Create content wrapper for label and votes
+    var contentWrapper = document.createElement('div');
+    contentWrapper.className = 'pin-content';
+    
+    var label = document.createElement('span');
+    label.className = 'pin-label';
+    label.textContent = hazardLabel;
+    contentWrapper.appendChild(label);
+
+    // Vote buttons container
+    var voteContainer = document.createElement('div');
+    voteContainer.className = 'vote-buttons';
+    
+    // Get vote data to check if user has voted
+    var voteData = { upvoted: [], downvoted: [] };
+    try {
+        var stored = localStorage.getItem('hazardmap-votes');
+        if (stored) voteData = JSON.parse(stored);
+        if (!voteData.upvoted) voteData.upvoted = [];
+        if (!voteData.downvoted) voteData.downvoted = [];
+    } catch (e) {}
+    
+    var hasUpvoted = voteData.upvoted.indexOf(id) !== -1;
+    var hasDownvoted = voteData.downvoted.indexOf(id) !== -1;
+    var upvoteCount = pins[id] ? (pins[id].upvotes || 0) : 0;
+    var downvoteCount = pins[id] ? (pins[id].downvotes || 0) : 0;
+    
+    // Upvote button
+    var upvoteBtn = document.createElement('button');
+    upvoteBtn.className = 'pin-upvote' + (hasUpvoted ? ' voted' : '');
+    upvoteBtn.setAttribute('aria-label', 'Upvote hazard');
+    upvoteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-8 8h5v8h6v-8h5z"/></svg><span class="upvote-count">' + upvoteCount + '</span>';
+    
+    // Downvote button
+    var downvoteBtn = document.createElement('button');
+    downvoteBtn.className = 'pin-downvote' + (hasDownvoted ? ' voted' : '');
+    downvoteBtn.setAttribute('aria-label', 'Downvote hazard');
+    downvoteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l8-8h-5V4H9v8H4z"/></svg><span class="downvote-count">' + downvoteCount + '</span>';
+    
+    upvoteBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        handleVote(id, 'up', upvoteBtn, downvoteBtn);
+    });
+    
+    downvoteBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        handleVote(id, 'down', upvoteBtn, downvoteBtn);
+    });
+    
+    voteContainer.appendChild(upvoteBtn);
+    voteContainer.appendChild(downvoteBtn);
+    contentWrapper.appendChild(voteContainer);
+    
+    item.appendChild(contentWrapper);
+
+    // Lookup landmark and update marker popup (async)
+    (function(marker) {
+        var latlng = marker.getLatLng();
+        getBuildingAndPOI(latlng, 400).then(function(res) {
+            var landmarkText = null;
+            if (res) {
+                var parts = [];
+                if (res.building && res.building.name) {
+                    parts.push((res.building.type || 'Building') + ': ' + res.building.name + ' (' + Math.round(res.building.dist) + ' m)');
+                }
+                if (res.poi && res.poi.name) {
+                    var poiLabel = res.poi.name;
+                    if (!res.building || (res.building.name !== poiLabel)) {
+                        parts.push('Nearest: ' + (res.poi.type || 'Place') + ': ' + poiLabel + ' (' + Math.round(res.poi.dist) + ' m)');
+                    }
+                }
+                landmarkText = parts.length > 0 ? parts.join(' • ') : null;
+            }
+            // Update marker popup with landmark info
+            try {
+                var pinEntry = pins[id];
+                if (pinEntry && pinEntry.marker) {
+                    var nm = pinEntry.name || name;
+                    pinEntry.marker.bindPopup(renderPopupContent(nm, landmarkText, pinEntry.marker.getLatLng()));
+                }
+            } catch (e) {}
+        }).catch(function(err) {
+            console.warn('Landmark lookup error:', err);
+        });
+    })(marker);
 
     // click list item to pan to marker and open popup
     item.addEventListener('click', function() {
@@ -368,33 +927,52 @@ function updatePinNameInList(id, newName) {
     }
 }
 
-// Add pin on click
-map.on('click', function(e) {
-    // Make sure pins stay within bounds
-    if (
-        e.latlng.lat >= bounds[0][0] && e.latlng.lat <= bounds[1][0] &&
-        e.latlng.lng >= bounds[0][1] && e.latlng.lng <= bounds[1][1]
-    ) {
-        // Ask the user for a name for this pin
-        var name = prompt('Enter a name for this pin:', '');
-        if (name === null) {
-            // User cancelled — don't create the marker
-            return;
-        }
-        name = name.trim();
-        if (name === '') {
-            name = 'Unnamed pin';
-        }
-        var marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
-        marker.bindPopup(name).openPopup();
+// Delete confirmation dialog helpers
+function openDeleteDialog(onDone) {
+    var dlg = document.getElementById('delete-dialog');
+    var btnConfirm = document.getElementById('delete-dialog-confirm');
+    var btnCancel = document.getElementById('delete-dialog-cancel');
+    if (!dlg || !btnConfirm || !btnCancel) { onDone && onDone(false); return; }
+    dlg.hidden = false; dlg.setAttribute('aria-hidden', 'false');
+    var close = function(result){ dlg.hidden = true; dlg.setAttribute('aria-hidden', 'true'); onDone && onDone(result); };
+    btnConfirm.onclick = function(){ close(true); };
+    btnCancel.onclick = function(){ close(false); };
+    document.addEventListener('keydown', function esc(e){ if(e.key==='Escape'){ document.removeEventListener('keydown', esc); close(false); } });
+    document.querySelector('#delete-dialog .name-dialog-backdrop').onclick = function(){ close(false); };
+}
 
-        // Create an id for this pin and store it
-        var id = 'pin-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-        pins[id] = { id: id, name: name, marker: marker };
+// Lightweight name dialog helpers
+function initNameDialog() {
+    var dlg = document.getElementById('name-dialog');
+    var input = document.getElementById('name-dialog-input');
+    var btnSave = document.getElementById('name-dialog-save');
+    var btnCancel = document.getElementById('name-dialog-cancel');
+    if (!dlg || !input || !btnSave || !btnCancel) return;
+    // close on Esc or backdrop click
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeNameDialog(null); });
+    document.querySelector('.name-dialog-backdrop').addEventListener('click', function(){ closeNameDialog(null); });
+}
 
-        // Add to bottom list (also shows nearest landmark)
-        addPinToList(id, name, marker);
+var _nameDialogResolver = null;
+function openNameDialog(initialValue, onDone) {
+    var dlg = document.getElementById('name-dialog');
+    var input = document.getElementById('name-dialog-input');
+    var select = document.getElementById('hazard-type-select');
+    var btnSave = document.getElementById('name-dialog-save');
+    var btnCancel = document.getElementById('name-dialog-cancel');
+    if (!dlg || !input || !select || !btnSave || !btnCancel) { onDone && onDone({ name: initialValue || '', hazardType: 'other' }); return; }
+    dlg.hidden = false; dlg.setAttribute('aria-hidden', 'false');
+    input.value = initialValue || '';
+    select.value = 'other'; // Reset to default
+    setTimeout(function(){ input.focus(); input.select(); }, 50);
+    _nameDialogResolver = onDone;
+    btnSave.onclick = function(){ closeNameDialog({ name: input.value, hazardType: select.value }); };
+    btnCancel.onclick = function(){ closeNameDialog(null); };
+}
 
-        // Allow renaming the pin by double-clicking it
-        marker.on('dblclick', function() {
-            var current = marker.getPopup() ? marker.getPopup().getContent() : '';
+function closeNameDialog(result) {
+    var dlg = document.getElementById('name-dialog');
+    if (dlg) { dlg.hidden = true; dlg.setAttribute('aria-hidden', 'true'); }
+    var cb = _nameDialogResolver; _nameDialogResolver = null;
+    if (cb) cb(result);
+}

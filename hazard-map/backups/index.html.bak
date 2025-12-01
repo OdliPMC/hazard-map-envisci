@@ -1,25 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Hazard Map</title>
+    <title>SECUPD - Hazard Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Raleway:wght@700&family=Oswald:wght@600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <!-- Supabase will be imported as an ES module inside main.js via esm.sh -->
 </head>
 <body>
     <header>
-        <h1 class="site-title">Balaot</h1>
-
-        <!-- Theme toggle (top-right) -->
-        <button id="theme-toggle" class="theme-toggle" aria-pressed="false" title="Toggle light/dark mode">🌙</button>
+        <img src="icon.png" alt="secUPD" class="site-icon">
 
         <!-- Tabs moved to the top header area -->
         <nav class="tabs" aria-label="Top header tabs">
             <div class="tab-buttons" role="tablist" aria-label="Top sections">
-                <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-hazards" id="tab-btn-hazards">Hazards</button>
+                <!-- Theme toggle (before tabs) -->
+                <button id="theme-toggle" class="theme-toggle" aria-pressed="false" title="Toggle light/dark mode">🌙</button>
                 <button class="tab-button active" role="tab" aria-selected="true" aria-controls="tab-who" id="tab-btn-who">Who we are</button>
-                <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-updates" id="tab-btn-updates">Site Updates</button>
-                <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-disclaimer" id="tab-btn-disclaimer">Disclaimer</button>
+                <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-instructions" id="tab-btn-instructions">Instructions</button>
+                <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-hazard-types" id="tab-btn-hazard-types">Hazard Types</button>
+                <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-hazards" id="tab-btn-hazards">Hazards</button>
+                <button class="tab-button" role="tab" aria-selected="false" aria-controls="tab-disclaimer" id="tab-btn-disclaimer">Feedback</button>
             </div>
         </nav>
     </header>
@@ -28,6 +30,73 @@
         <aside class="sidebar">
             <!-- Tab panels for the header tabs (content shown in the sidebar) -->
             <div class="tab-panels">
+                <div id="tab-who" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-who">
+                    <h3>Who we are</h3>
+                    <p style="text-align: center; margin-bottom: 20px;"><img src="icon2.png" alt="SECUPD" style="height: 60px;"></p>
+                    <p>This website was created by the group BLOOMS as a final project requirement for Env Sci WFW, 1st Sem, AY '25-'26. The goal of this project is to make a community-sustained hazard map for UP Diliman to encourage students and community-goers alike to safely travel through the campus on foot, therefore reducing their collective carbon footprint. We, members of BLOOMS, hope that you, the user, would find this website helpful and use it for its intended purpose.</p>
+                </div>
+                <div id="tab-instructions" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-instructions" hidden>
+                    <h3>Instructions</h3>
+                    <ul>
+                        <li><strong>Add a pin:</strong> Click anywhere inside the campus bounds on the map, enter a name, and select a hazard type. The pin appears with a color-coded marker in the Hazards list.</li>
+                        <li><strong>Voting system:</strong> On the Hazards tab, you can vote for hazards by upvoting or downvoting pins to indicate their reliability.</li>
+                        <li><strong>Hazard types:</strong> See the Hazard Types tab for all available categories. Each type has its own colored pin on the map.</li>
+                        <li><strong>Rename a pin:</strong> Double‑click the marker on the map and enter the new name or change the hazard type.</li>
+                        <li><strong>Locate a pin:</strong> Click its entry in the Hazards list to center the map and open its popup.</li>
+                        <li><strong>Delete a pin:</strong> Use the black trash icon on the left of the item, then confirm.</li>
+                        <li><strong>Nearest landmark:</strong> After adding a pin it also shows your nearest landmark; results show on the Hazards Tab.</li>
+                        <li><strong>Shared pins:</strong> When connected, pins sync via a database.</li>
+                        <li><strong>Bounds:</strong> Pins can only be placed within the defined UP Diliman boundary; clicks outside are rejected.</li>
+                        <li><strong>Dark/Light mode:</strong> Use the moon/sun button (top right) to switch dark/light modes.</li>
+                    </ul>
+                </div>
+
+                <div id="tab-hazard-types" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-hazard-types" hidden>
+                    <h3>Hazard Types</h3>
+                    <div class="hazard-types-content">
+                        <div class="hazard-type-item">
+                            <img src="hazards-icons/Theft.png" alt="" style="width: 40px; height: 40px; float: left; margin-right: 12px;">
+                            <h4>Theft</h4>
+                            <p>There have been case(s) of theft around the area. Be wary of strangers and protect yourself and your belongings.</p>
+                        </div>
+                        <div class="hazard-type-item">
+                            <img src="hazards-icons/Flooding.png" alt="" style="width: 40px; height: 40px; float: left; margin-right: 12px;">
+                            <h4>Flooding</h4>
+                            <p>There is flooding in the area during extreme rainfall. Avoid walking through when it rains and slow down when driving through the area.</p>
+                        </div>
+                        <div class="hazard-type-item">
+                            <img src="hazards-icons/Slippery.png" alt="" style="width: 40px; height: 40px; float: left; margin-right: 12px;">
+                            <h4>Slippery when wet</h4>
+                            <p>The area is slippery when wet (e.g. when it rains). Be careful when walking through the area and be conscious of slippery moss on the ground.</p>
+                        </div>
+                        <div class="hazard-type-item">
+                            <img src="hazards-icons/Stray-Pets.png" alt="" style="width: 40px; height: 40px; float: left; margin-right: 12px;">
+                            <h4>Be aware of community pets</h4>
+                            <p>There are community pets around the area. Ask nearby personnel for details. Walk and drive carefully to avoid harming the animals.</p>
+                        </div>
+                        <div class="hazard-type-item">
+                            <img src="hazards-icons/Wild-Animals.png" alt="" style="width: 40px; height: 40px; float: left; margin-right: 12px;">
+                            <h4>Be aware of wild animals</h4>
+                            <p>There have been report(s) of wild animals in the area (e.g. snakes, higad). Be aware of your surroundings when passing by and avoid antagonising any animals you encounter.</p>
+                        </div>
+                        <div class="hazard-type-item">
+                            <img src="hazards-icons/Construction.png" alt="" style="width: 40px; height: 40px; float: left; margin-right: 12px;">
+                            <h4>Construction on-going</h4>
+                            <p>There is a construction site in the area. Be wary of falling debris and avoid walking or driving by during heavy rainfall and earthquakes.</p>
+                        </div>
+                        <div class="hazard-type-item">
+                            <img src="hazards-icons/No-lights.png" alt="" style="width: 40px; height: 40px; float: left; margin-right: 12px;">
+                            <h4>No lights at night</h4>
+                            <p>The area is dark during the night (no streetlights). Do not walk through the area alone and drive slowly to avoid accidents.</p>
+                        </div>
+                        <div class="hazard-type-item">
+                            <img src="hazards-icons/Slope.png" alt="" style="width: 40px; height: 40px; float: left; margin-right: 12px;">
+                            <h4>Slopes</h4>
+                            <p>The area has a steep incline; be careful when walking or consider other routes to avoid exhaustion.</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="tab-hazards" class="tab-panel hazard-panel" role="tabpanel" aria-labelledby="tab-btn-hazards" hidden>
                     <h3>Hazard List</h3>
                     <div class="hazard-list" id="hazard-list">
@@ -36,22 +105,13 @@
                     </div>
                 </div>
 
-                <div id="tab-who" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-who">
-                    <h3>Who we are</h3>
-                    <p>We are a small environmental science team building simple tools to visualize hazards and community data. This map demonstrates pinning points and searching nearby landmarks.</p>
-                </div>
-
-                <div id="tab-updates" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-updates" hidden>
-                    <h3>Site Updates</h3>
-                    <ul>
-                        <li>2025-11-21 — Added pin naming and landmark lookup.</li>
-                        <li>2025-11-21 — Moved pin list below the map.</li>
-                    </ul>
-                </div>
-
                 <div id="tab-disclaimer" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-disclaimer" hidden>
-                    <h3>Disclaimer</h3>
-                    <p>The data shown is for demonstration only. Overpass and Nominatim lookups are subject to external service availability and may be rate-limited.</p>
+                    <h3>Feedback</h3>
+                    <p>We'd love to hear your thoughts! Please share your feedback using the form below:</p>
+                    <p style="margin-top: 12px;"><a href="https://tinyurl.com/SECUPDFeedback" target="_blank" rel="noopener noreferrer" style="color: #5a0000; font-weight: 600; text-decoration: underline;">Submit Feedback Form</a></p>
+                    <p style="text-align: center; margin-top: 20px;">
+                        <img src="qr-feedback.png" alt="Feedback QR Code" style="max-width: 200px; height: auto; border: 2px solid rgba(128,0,0,0.2); border-radius: 8px;">
+                    </p>
                 </div>
             </div>
         </aside>
@@ -62,10 +122,52 @@
     </div>
 
     <footer>
-        <p>© 2025 Hazard Map Project</p>
+        <p>© 2025 Hazard Map Project <span id="conn-status" class="conn-status" aria-live="polite" style="margin-left:8px;color:#7aa2f7"></span></p>
     </footer>
+    <!-- Toast notifications -->
+    <div id="toast" class="toast" aria-live="polite" hidden></div>
+
+    <!-- Lightweight Pin Name Dialog -->
+    <div id="name-dialog" class="name-dialog" hidden aria-hidden="true" role="dialog" aria-labelledby="name-dialog-title">
+        <div class="name-dialog-backdrop"></div>
+        <div class="name-dialog-card">
+            <h4 id="name-dialog-title">Name this pin</h4>
+            <p class="name-dialog-help">Keep it short and clear (e.g., "Broken sidewalk near Palma Hall").</p>
+            <input id="name-dialog-input" type="text" maxlength="80" placeholder="Enter pin name" aria-label="Pin name" />
+            <label for="hazard-type-select" style="display: block; margin-top: 12px; font-size: 14px; font-weight: 600; color: #3b0b0b;">Hazard Type:</label>
+            <select id="hazard-type-select" aria-label="Hazard type" style="width: 100%; padding: 8px; margin-top: 4px; border: 1px solid rgba(0,0,0,0.2); border-radius: 4px; font-size: 14px;">
+                <option value="other">Other / General</option>
+                <option value="theft">Theft</option>
+                <option value="flooding">Flooding</option>
+                <option value="slippery">Slippery when wet</option>
+                <option value="pets">Community pets</option>
+                <option value="wild-animals">Wild animals</option>
+                <option value="construction">Construction on-going</option>
+                <option value="no-lights">No lights at night</option>
+                <option value="slopes">Slopes</option>
+            </select>
+            <div class="name-dialog-actions">
+                <button id="name-dialog-cancel" class="btn-secondary" type="button">Cancel</button>
+                <button id="name-dialog-save" class="btn-primary" type="button">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Dialog -->
+    <div id="delete-dialog" class="name-dialog" hidden aria-hidden="true" role="dialog" aria-labelledby="delete-dialog-title">
+        <div class="name-dialog-backdrop"></div>
+        <div class="name-dialog-card">
+            <h4 id="delete-dialog-title">Delete this pin?</h4>
+            <p class="name-dialog-help">This action cannot be undone.</p>
+            <div class="name-dialog-actions">
+                <button id="delete-dialog-cancel" class="btn-secondary" type="button">Cancel</button>
+                <button id="delete-dialog-confirm" class="btn-primary" type="button">Delete</button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="main.js"></script>
+    <!-- Load app as module so it can import Supabase from esm.sh -->
+    <script type="module" src="main.js"></script>
 </body>
 </html>
