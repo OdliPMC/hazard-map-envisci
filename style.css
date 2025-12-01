@@ -305,6 +305,15 @@ body:not(.light-mode) .tab-panel li {
     clear: both;
 }
 
+/* Dark mode hazard type items */
+body:not(.light-mode) .hazard-type-item h4 {
+    color: #ffffff;
+}
+
+body:not(.light-mode) .hazard-type-item p {
+    color: #e0e0e0;
+}
+
 .light-mode .hazard-type-item {
     background: rgba(128, 0, 0, 0.05);
 }
