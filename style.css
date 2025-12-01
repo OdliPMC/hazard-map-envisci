@@ -83,6 +83,22 @@ header {
     overflow-wrap: break-word;
 }
 
+/* Dark mode sidebar */
+body:not(.light-mode) .sidebar {
+    background-color: #3a3a3d;
+    color: #e0e0e0;
+}
+
+body:not(.light-mode) .tab-panel h3 {
+    color: #e0e0e0;
+}
+
+body:not(.light-mode) .tab-panel p,
+body:not(.light-mode) .tab-panel ul,
+body:not(.light-mode) .tab-panel li {
+    color: #c0c0c0;
+}
+
 /* Make tab-panels fill the sidebar vertically so a panel can take over the whole left box */
 .tab-panels {
     display: flex;
