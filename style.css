@@ -96,14 +96,14 @@ body:not(.light-mode) .sidebar {
 }
 
 .light-mode .tab-panel h3 {
-    color: var(--maroon);
+    color: var(--maroon) !important;
 }
 
 .light-mode .tab-panel p,
 .light-mode .tab-panel ul,
 .light-mode .tab-panel li,
 .light-mode .tab-panel a {
-    color: var(--maroon-dark);
+    color: var(--maroon-dark) !important;
 }
 
 body:not(.light-mode) .tab-panel h3 {
@@ -278,7 +278,6 @@ body:not(.light-mode) .tab-panel li {
 .light-mode .map-container { background: #fff; }
 .light-mode #map { background: #fafafa; }
 .light-mode .pin-list { background: #fff; border-color: rgba(0,0,0,0.06); }
-.light-mode .tab-panel { color: #222; }
 .tab-panel {
     background: transparent;
     padding: 6px 4px;
