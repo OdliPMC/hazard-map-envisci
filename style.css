@@ -334,11 +334,11 @@ body:not(.light-mode) .hazard-type-item p {
 }
 
 .light-mode .hazard-type-item h4 {
-    color: var(--maroon-dark);
+    color: var(--maroon) !important;
 }
 
 .light-mode .hazard-type-item p {
-    color: #222;
+    color: var(--maroon-dark) !important;
 }
 
 .map-container {
