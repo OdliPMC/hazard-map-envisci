@@ -451,6 +451,8 @@ body:not(.light-mode) .hazard-type-item p {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    min-width: 0;
+    overflow: hidden;
 }
 
 /* Hazard icon in pin list */
