@@ -468,11 +468,14 @@ body:not(.light-mode) .hazard-type-item p {
     display: block;
     flex: 1 1 auto;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     font-weight: 600;
     color: var(--main-text-dark);
     max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    line-height: 1.3;
+    font-size: clamp(11px, 2.5vw, 14px);
 }
 
 .pin-item .pin-landmark {
