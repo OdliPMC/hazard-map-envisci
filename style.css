@@ -472,6 +472,7 @@ body:not(.light-mode) .hazard-type-item p {
     white-space: nowrap;
     font-weight: 600;
     color: var(--main-text-dark);
+    max-width: 100%;
 }
 
 .pin-item .pin-landmark {
