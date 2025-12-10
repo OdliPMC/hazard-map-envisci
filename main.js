@@ -845,9 +845,11 @@ function addPinToList(id, name, marker) {
         'construction': 'Construction on-going',
         'no-lights': 'No lights at night',
         'slopes': 'Slopes',
+        'mosquitoes': 'Mosquitoes',
+        'accidents': 'Accidents',
         'other': 'Other / General'
     };
-    var hazardTypeIcons = {
+    var hazardTypeIconsLocal = {
         'theft': 'hazards-icons/Theft.png',
         'flooding': 'hazards-icons/Flooding.png',
         'slippery': 'hazards-icons/Slippery.png',
@@ -856,10 +858,12 @@ function addPinToList(id, name, marker) {
         'construction': 'hazards-icons/Construction.png',
         'no-lights': 'hazards-icons/No-lights.png',
         'slopes': 'hazards-icons/Slope.png',
+        'mosquitoes': 'hazards-icons/Mosquitoes.png',
+        'accidents': 'hazards-icons/Accidents.png',
         'other': null
     };
     var hazardLabel = hazardTypeLabels[hazardType] || 'Other / General';
-    var hazardIcon = hazardTypeIcons[hazardType];
+    var hazardIcon = hazardTypeIconsLocal[hazardType];
 
     // Add icon if available
     if (hazardIcon) {
