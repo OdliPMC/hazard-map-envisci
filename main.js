@@ -41,6 +41,8 @@ var hazardTypeIcons = {
     'construction': 'hazards-icons/Construction.png',
     'no-lights': 'hazards-icons/No-lights.png',
     'slopes': 'hazards-icons/Slope.png',
+    'mosquitoes': 'hazards-icons/Mosquitoes.png',
+    'accidents': 'hazards-icons/Accidents.png',
     'other': null
 };
 
